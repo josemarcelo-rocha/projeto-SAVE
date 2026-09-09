@@ -1,0 +1,2999 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SAVE - Sistema de Assistência Virtual Escolar</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Inter Font -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <script>
+    // Configure Tailwind Custom Colors from Prompt Specification
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              lightBg: '#F6F7F7',
+              cardDark: '#363F44',
+              darkBg: '#0D1117',
+              darkerBg: '#06080B',
+              red: '#AC0815',
+              redHover: '#87050F'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #363F44;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #AC0815;
+    }
+
+    /* Glassmorphism & Visual Polish */
+    .glass-card {
+      backdrop-filter: blur(8px);
+    }
+
+    .badge-status {
+      font-size: 0.75rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: 9999px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .animate-fadeIn {
+      animation: fadeIn 0.25s ease-out forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body class="h-full bg-brand-lightBg text-slate-800 dark:bg-brand-darkBg dark:text-slate-100 font-sans transition-colors duration-200 flex flex-col antialiased selection:bg-brand-red selection:text-white">
+
+  <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 max-w-sm w-full pointer-events-none"></div>
+
+  <header class="bg-white/80 dark:bg-brand-cardDark/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700/60 sticky top-0 z-40 transition-colors">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <!-- Logo & Branding -->
+        <div class="flex items-center gap-3 cursor-pointer" onclick="app.navigateToHome()">
+          <div class="relative w-10 h-10 rounded-full bg-brand-darkerBg flex items-center justify-center p-1 border-2 border-brand-red shadow-lg overflow-hidden">
+            <!-- SVG Robot Logo mimicking prompt image -->
+            <svg class="w-8 h-8 text-white" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="50" cy="50" r="45" fill="#0D1117"/>
+              <circle cx="50" cy="50" r="38" stroke="#AC0815" stroke-width="4"/>
+              <rect x="25" y="32" width="50" height="36" rx="18" fill="#FFFFFF"/>
+              <rect x="29" y="36" width="42" height="28" rx="14" fill="#0D1117"/>
+              <circle cx="40" cy="50" r="4" fill="#AC0815"/>
+              <circle cx="60" cy="50" r="4" fill="#AC0815"/>
+              <path d="M 42 58 Q 50 64 58 58" stroke="#AC0815" stroke-width="3" stroke-linecap="round" fill="none"/>
+              <!-- Graduation Cap -->
+              <polygon points="50,12 80,24 50,32 20,24" fill="#363F44" stroke="#AC0815" stroke-width="2"/>
+              <rect x="46" y="23" width="8" height="6" fill="#AC0815"/>
+              <path d="M 80 24 L 80 38" stroke="#AC0815" stroke-width="2"/>
+              <circle cx="80" cy="40" r="2.5" fill="#AC0815"/>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-black text-xl tracking-wider text-slate-900 dark:text-white">SAVE</span>
+              <span class="text-xs px-2 py-0.5 rounded font-bold bg-brand-red text-white">PROTÓTIPO</span>
+            </div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 font-medium hidden sm:block">Sistema de Assistência Virtual Escolar</p>
+          </div>
+        </div>
+
+        <!-- Right Header Actions (Theme, User Profile, Logout) -->
+        <div class="flex items-center gap-3">
+          
+          <!-- Theme Switcher Menu -->
+          <div class="relative inline-block text-left" id="theme-dropdown-wrapper">
+            <button id="theme-btn" onclick="app.toggleThemeDropdown()" class="p-2.5 rounded-xl bg-slate-100 dark:bg-brand-darkerBg text-slate-600 dark:text-slate-300 hover:text-brand-red dark:hover:text-brand-red transition-all border border-slate-200 dark:border-slate-700/60" title="Mudar Tema">
+              <i id="theme-btn-icon" class="fa-solid fa-moon"></i>
+            </button>
+            <div id="theme-dropdown" class="hidden absolute right-0 mt-2 w-36 rounded-xl bg-white dark:bg-brand-cardDark shadow-xl border border-slate-200 dark:border-slate-700 py-1 z-50 text-xs font-semibold">
+              <button onclick="app.setTheme('light')" class="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                <i class="fa-solid fa-sun text-amber-500"></i> Claro
+              </button>
+              <button onclick="app.setTheme('dark')" class="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                <i class="fa-solid fa-moon text-indigo-400"></i> Escuro
+              </button>
+              <button onclick="app.setTheme('auto')" class="w-full text-left px-3 py-2 flex items-center gap-2 hover:bg-slate-100 dark:hover:bg-slate-700/50">
+                <i class="fa-solid fa-desktop text-emerald-500"></i> Automático
+              </button>
+            </div>
+          </div>
+
+          <!-- Active User Badge & Logout -->
+          <div id="header-user-info" class="hidden flex items-center gap-3 pl-3 border-l border-slate-200 dark:border-slate-700">
+            <div class="text-right hidden sm:block">
+              <div id="header-user-name" class="text-xs font-bold text-slate-800 dark:text-slate-100"></div>
+              <div id="header-user-role" class="text-[10px] uppercase tracking-wider font-semibold text-brand-red"></div>
+            </div>
+            <button onclick="app.logout()" class="px-3 py-2 rounded-xl bg-brand-red/10 text-brand-red hover:bg-brand-red hover:text-white font-medium text-xs transition-all flex items-center gap-2 border border-brand-red/20" title="Sair do Sistema">
+              <i class="fa-solid fa-right-from-bracket"></i>
+              <span class="hidden md:inline">Sair</span>
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <main id="app-viewport" class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col">
+    <!-- Views will be dynamically injected here -->
+  </main>
+
+  <footer class="bg-white dark:bg-brand-darkerBg border-t border-slate-200 dark:border-slate-800 py-4 px-6 text-center text-xs text-slate-500 dark:text-slate-400 mt-auto">
+    <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+      <p>© 2026 <strong>SAVE</strong> - Sistema de Assistência Virtual Escolar. Todos os direitos reservados.</p>
+      <p class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-ping"></span>
+        Status: <span class="text-slate-700 dark:text-slate-300 font-semibold">Protótipo Online</span>
+      </p>
+    </div>
+  </footer>
+
+  <div id="modal-container" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
+    <div id="modal-content" class="bg-white dark:bg-brand-cardDark rounded-2xl border border-slate-200 dark:border-slate-700 shadow-2xl max-w-lg w-full overflow-hidden p-6 relative">
+      <!-- Dynamic modal content -->
+    </div>
+  </div>
+
+  <script>
+    /* ===================================================================
+       SAVE - LOCAL DATA ENGINE & SYSTEM STATE INITIALIZATION
+       =================================================================== */
+
+    // Initial Database Seed if LocalStorage is empty
+    const DEFAULT_DB = {
+      users: [
+        {
+          id: 'SYS-1001',
+          role: 'administrador',
+          login: 'admin',
+          nome: 'Carlos Eduardo Andrade (Admin)',
+          cpf: '111.222.333-44',
+          senhaHash: 'Admin123!',
+          permissoes: ['all']
+        },
+        {
+          id: 'SYS-1002',
+          role: 'assistente',
+          login: 'assistente1',
+          nome: 'Mariana Costa (Assistente)',
+          cpf: '222.333.444-55',
+          senhaHash: 'Assist123!',
+          permissoes: ['requerimentos', 'atestados', 'calendario']
+        },
+        {
+          id: 'SYS-2001',
+          role: 'professor',
+          login: 'joao.silva',
+          nome: 'João Silva',
+          cpf: '333.444.555-66',
+          senhaHash: 'Prof123!'
+        },
+        {
+          id: 'SYS-2002',
+          role: 'professor',
+          login: 'maria.santos',
+          nome: 'Maria Santos',
+          cpf: '444.555.666-77',
+          senhaHash: 'Prof123!'
+        },
+        {
+          id: 'SYS-3001',
+          role: 'aluno',
+          rm: '2026001',
+          nome: 'Lucas Mendes',
+          cpf: '555.666.777-88',
+          turmaId: 'TURMA-3A',
+          nomeTurma: '3º Ano A - Ensino Médio',
+          resp1Nome: 'Roberto Mendes',
+          resp2Nome: 'Ana Paula Mendes',
+          senhaHash: 'Aluno123!'
+        },
+        {
+          id: 'SYS-4001',
+          role: 'responsavel',
+          rm: '2026001', // Linked to student RM
+          nome: 'Roberto Mendes',
+          alunoNome: 'Lucas Mendes',
+          cpf: '666.777.888-99',
+          turmaId: 'TURMA-3A',
+          nomeTurma: '3º Ano A - Ensino Médio',
+          senhaHash: 'Resp123!'
+        }
+      ],
+      turmas: [
+        { id: 'TURMA-3A', nome: '3º Ano A - Ensino Médio', periodo: 'Matutino', grupos: ['Grupo 1', 'Grupo 2'] },
+        { id: 'TURMA-2B', nome: '2º Ano B - Ensino Médio', periodo: 'Vespertino', grupos: ['Grupo Único'] }
+      ],
+      disciplinas: [
+        { id: 'DISC-1', turmaId: 'TURMA-3A', nome: 'Matemática Aplicada', sigla: 'MAT', aulasSemanais: 4, profLogin: 'joao.silva' },
+        { id: 'DISC-2', turmaId: 'TURMA-3A', nome: 'Física Geral', sigla: 'FIS', aulasSemanais: 3, profLogin: 'joao.silva' },
+        { id: 'DISC-3', turmaId: 'TURMA-3A', nome: 'Língua Portuguesa', sigla: 'PORT', aulasSemanais: 4, profLogin: 'maria.santos' },
+        { id: 'DISC-4', turmaId: 'TURMA-2B', nome: 'Literatura', sigla: 'LIT', aulasSemanais: 3, profLogin: 'maria.santos' }
+      ],
+      horarioConfig: {
+        dias: ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta'],
+        slots: [
+          { id: 1, inicio: '07:30', fim: '08:20' },
+          { id: 2, inicio: '08:20', fim: '09:10' },
+          { id: 3, inicio: '09:30', fim: '10:20' },
+          { id: 4, inicio: '10:20', fim: '11:10' },
+          { id: 5, inicio: '11:10', fim: '12:00' }
+        ]
+      },
+      // Real (Active) Timetable: array of grid entries
+      horarioReal: [
+        { turmaId: 'TURMA-3A', dia: 'Segunda', slotId: 1, discId: 'DISC-1', profLogin: 'joao.silva' },
+        { turmaId: 'TURMA-3A', dia: 'Segunda', slotId: 2, discId: 'DISC-1', profLogin: 'joao.silva' },
+        { turmaId: 'TURMA-3A', dia: 'Terça', slotId: 1, discId: 'DISC-3', profLogin: 'maria.santos' },
+        { turmaId: 'TURMA-3A', dia: 'Quarta', slotId: 3, discId: 'DISC-2', profLogin: 'joao.silva' }
+      ],
+      // Draft Timetable for Admin editing
+      horarioRascunho: [],
+      calendario: [
+        { id: 'CAL-1', titulo: 'Início do Ano Letivo 2026', data: '2026-02-02', tipo: 'Letivo', desc: 'Repasse de orientações gerais nas turmas.' },
+        { id: 'CAL-2', titulo: 'Feira de Ciências & Tecnologia', data: '2026-09-25', tipo: 'Atividade', desc: 'Apresentação de projetos dos alunos no ginásio.' },
+        { id: 'CAL-3', titulo: 'Prazo Final - Entrega de Notas 3º Bimestre', data: '2026-10-05', tipo: 'Prazo', desc: 'Lançamento obrigatório no portal pelos professores.' },
+        { id: 'CAL-4', titulo: 'Reunião de Conselho Escolar', data: '2026-10-15', tipo: 'Conselho', desc: 'Avaliação de desempenho das turmas.' },
+        { id: 'CAL-5', titulo: 'Viagem Cultural ao Museu de Ciências', data: '2026-11-10', tipo: 'Viagem', desc: 'Atividade extraclasse com alunos do 3º Ano.' }
+      ],
+      requerimentos: [
+        {
+          id: 'REQ-101',
+          rmAluno: '2026001',
+          nomeAluno: 'Lucas Mendes',
+          tipo: 'Declaração de Matrícula',
+          motivo: 'Comprovação para benefício de transporte de estudante.',
+          complemento: 'Necessário carimbo da secretaria.',
+          dataCriacao: '2026-09-01',
+          status: 'Pronto para retirada',
+          motivoRecusa: ''
+        },
+        {
+          id: 'REQ-102',
+          rmAluno: '2026001',
+          nomeAluno: 'Lucas Mendes',
+          tipo: 'Histórico Escolar',
+          motivo: 'Solicitação de estágio extracurricular.',
+          complemento: '',
+          dataCriacao: '2026-09-08',
+          status: 'Pendente',
+          motivoRecusa: ''
+        }
+      ],
+      atestados: [
+        {
+          id: 'ATE-501',
+          rmAluno: '2026001',
+          nomeAluno: 'Lucas Mendes',
+          curso: '3º Ano A - Ensino Médio',
+          dataAtestado: '2026-09-03',
+          dias: 2,
+          dataEnvio: '2026-09-03',
+          status: 'Aceito',
+          motivoRecusa: '',
+          comprovanteNome: 'atestado_medico_lucas.pdf'
+        }
+      ],
+      knowledgeBase: [
+        { id: 'KB-1', palavrasChave: 'rematricula documento matricula prazo ano letivo', pergunta: 'Como solicitar a rematrícula?', resposta: 'A rematrícula pode ser solicitada via formulário na aba Requerimentos -> Declaração de Matrícula ou diretamente na Secretaria Acadêmica durante o mês de Novembro.' },
+        { id: 'KB-2', palavrasChave: 'atestado faltas ausencia medico prazo', pergunta: 'Qual o prazo para envio do atestado médico?', resposta: 'O atestado médico deve ser enviado no prazo máximo de 48 horas após a emissão médica, através da aba "Entrega de Atestado" do sistema.' },
+        { id: 'KB-3', palavrasChave: 'horario aulas turmas professores entrada saida', pergunta: 'Como verificar o horário das aulas?', resposta: 'Acesse o menu "Horário" para visualizar a planilha completa com filtros por Turma, Dia da Semana e Professor.' },
+        { id: 'KB-4', palavrasChave: 'carteira estudante segunda via diploma certificado', pergunta: 'Como pedir a 2ª via do Diploma ou Histórico?', resposta: 'Acesse o menu Requerimentos, escolha a opção "Diploma" ou "Histórico Escolar", informe o motivo da solicitação e acompanhe o status diretamente pelo seu painel.' },
+        { id: 'KB-5', palavrasChave: 'contato secretaria telefone email funcionamento', pergunta: 'Quais os canais de atendimento da Secretaria?', resposta: 'A Secretaria funciona de Segunda a Sexta, das 07h30 às 18h00. E-mail: secretaria@escola.edu.br | Telefone: (15) 3333-4444.' }
+      ]
+    };
+
+    /* ===================================================================
+       APPLICATION CORE CONTROLLER (GLOBAL SCOPE)
+       =================================================================== */
+    class SAVEApp {
+      constructor() {
+        this.db = null;
+        this.currentUser = null;
+        this.currentTheme = 'auto';
+        this.init();
+      }
+
+      init() {
+        // Load Database from LocalStorage or seed defaults
+        const localData = localStorage.getItem('SAVE_DB_V1');
+        if (!localData) {
+          this.db = DEFAULT_DB;
+          // Seed draft as a clone of real initially
+          this.db.horarioRascunho = JSON.parse(JSON.stringify(DEFAULT_DB.horarioReal));
+          this.saveDB();
+        } else {
+          try {
+            this.db = JSON.parse(localData);
+          } catch(e) {
+            this.db = DEFAULT_DB;
+            this.saveDB();
+          }
+        }
+
+        // Load Theme
+        const savedTheme = localStorage.getItem('SAVE_THEME') || 'auto';
+        this.setTheme(savedTheme, false);
+
+        // Load active session if exists
+        const savedSession = sessionStorage.getItem('SAVE_SESSION');
+        if (savedSession) {
+          try {
+            this.currentUser = JSON.parse(savedSession);
+          } catch (e) {
+            this.currentUser = null;
+          }
+        }
+
+        this.renderHeader();
+        this.navigateToHome();
+        this.bindEvents();
+      }
+
+      saveDB() {
+        localStorage.setItem('SAVE_DB_V1', JSON.stringify(this.db));
+      }
+
+      bindEvents() {
+        // Close dropdown when clicking outside
+        window.addEventListener('click', (e) => {
+          const wrapper = document.getElementById('theme-dropdown-wrapper');
+          if (wrapper && !wrapper.contains(e.target)) {
+            const dropdown = document.getElementById('theme-dropdown');
+            if (dropdown) dropdown.classList.add('hidden');
+          }
+        });
+      }
+
+      setTheme(mode, notify = true) {
+        this.currentTheme = mode;
+        localStorage.setItem('SAVE_THEME', mode);
+        const html = document.documentElement;
+        const icon = document.getElementById('theme-btn-icon');
+
+        if (mode === 'dark') {
+          html.classList.add('dark');
+          if (icon) icon.className = 'fa-solid fa-moon text-indigo-400';
+        } else if (mode === 'light') {
+          html.classList.remove('dark');
+          if (icon) icon.className = 'fa-solid fa-sun text-amber-500';
+        } else {
+          // Auto
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+          if (prefersDark) {
+            html.classList.add('dark');
+            if (icon) icon.className = 'fa-solid fa-desktop text-emerald-500';
+          } else {
+            html.classList.remove('dark');
+            if (icon) icon.className = 'fa-solid fa-desktop text-emerald-500';
+          }
+        }
+
+        const dropdown = document.getElementById('theme-dropdown');
+        if (dropdown) dropdown.classList.add('hidden');
+
+        if (notify) this.toast(`Tema alterado para: ${mode.toUpperCase()}`, 'info');
+      }
+
+      toggleThemeDropdown() {
+        const dropdown = document.getElementById('theme-dropdown');
+        if (dropdown) dropdown.classList.toggle('hidden');
+      }
+
+      toast(message, type = 'success') {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const colors = {
+          success: 'bg-emerald-600 text-white border-emerald-500',
+          error: 'bg-brand-red text-white border-red-500',
+          info: 'bg-slate-800 text-white border-slate-700',
+          warning: 'bg-amber-500 text-white border-amber-400'
+        };
+
+        const icons = {
+          success: 'fa-circle-check',
+          error: 'fa-triangle-exclamation',
+          info: 'fa-circle-info',
+          warning: 'fa-triangle-exclamation'
+        };
+
+        const toastEl = document.createElement('div');
+        toastEl.className = `p-4 rounded-xl shadow-xl border flex items-center gap-3 transition-all transform translate-y-2 opacity-0 text-sm font-medium ${colors[type] || colors.info} pointer-events-auto`;
+        toastEl.innerHTML = `
+          <i class="fa-solid ${icons[type] || 'fa-circle-info'} text-lg"></i>
+          <span class="flex-1">${message}</span>
+          <button onclick="this.parentElement.remove()" class="opacity-70 hover:opacity-100 p-1"><i class="fa-solid fa-xmark"></i></button>
+        `;
+
+        container.appendChild(toastEl);
+
+        setTimeout(() => {
+          toastEl.classList.remove('translate-y-2', 'opacity-0');
+        }, 10);
+
+        setTimeout(() => {
+          toastEl.classList.add('opacity-0', 'translate-y-2');
+          setTimeout(() => toastEl.remove(), 300);
+        }, 4000);
+      }
+
+      renderHeader() {
+        const userInfoBox = document.getElementById('header-user-info');
+        const userNameEl = document.getElementById('header-user-name');
+        const userRoleEl = document.getElementById('header-user-role');
+
+        if (this.currentUser) {
+          userInfoBox.classList.remove('hidden');
+          userNameEl.innerText = this.currentUser.nome || 'Usuário';
+          userRoleEl.innerText = this.currentUser.role;
+        } else {
+          userInfoBox.classList.add('hidden');
+        }
+      }
+
+      login(userData) {
+        this.currentUser = userData;
+        sessionStorage.setItem('SAVE_SESSION', JSON.stringify(userData));
+        this.renderHeader();
+        this.toast(`Bem-vindo(a), ${userData.nome}!`, 'success');
+        this.navigateToHome();
+      }
+
+      logout() {
+        this.currentUser = null;
+        sessionStorage.removeItem('SAVE_SESSION');
+        this.renderHeader();
+        this.toast('Sessão encerrada com sucesso.', 'info');
+        this.navigateToHome();
+      }
+
+      navigateToHome() {
+        if (!this.currentUser) {
+          this.renderLoginView();
+          return;
+        }
+
+        switch (this.currentUser.role) {
+          case 'aluno':
+            this.renderAlunoView();
+            break;
+          case 'responsavel':
+            this.renderResponsavelView();
+            break;
+          case 'professor':
+            this.renderProfessorView();
+            break;
+          case 'administrador':
+          case 'assistente':
+            this.renderAdminView();
+            break;
+          case 'visitante':
+            this.renderVisitanteView();
+            break;
+          default:
+            this.renderLoginView();
+        }
+      }
+
+      validatePasswordRules(password, userRef = {}) {
+        if (!password || password.length < 8 || password.length > 16) {
+          return 'A senha deve conter entre 8 e 16 caracteres.';
+        }
+        if (!/[a-zA-Z]/.test(password)) {
+          return 'A senha deve conter pelo menos uma letra.';
+        }
+        if (!/[0-9]/.test(password)) {
+          return 'A senha deve conter pelo menos um número.';
+        }
+        if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+          return 'A senha deve conter pelo menos um caractere especial (!@#$%^&*...).';
+        }
+
+        const lowerPass = password.toLowerCase();
+        
+        // Check forbidden terms
+        if (userRef.login && lowerPass.includes(userRef.login.toLowerCase())) {
+          return 'A senha não pode conter o seu nome de usuário.';
+        }
+        if (userRef.rm && lowerPass.includes(userRef.rm.toString())) {
+          return 'A senha não pode conter o seu RM.';
+        }
+        if (userRef.cpf) {
+          const rawCpf = userRef.cpf.replace(/\D/g, '');
+          if (rawCpf && lowerPass.includes(rawCpf)) {
+            return 'A senha não pode conter o seu CPF.';
+          }
+        }
+
+        return null; // Valid!
+      }
+
+      /* ===================================================================
+         TELA 1: LOGIN, PRIMEIRA ACESSO & RECUPERAÇÃO DE ACESSO
+         =================================================================== */
+      renderLoginView() {
+        const viewport = document.getElementById('app-viewport');
+        viewport.innerHTML = `
+          <div class="flex-1 flex items-center justify-center py-6 animate-fadeIn">
+            <div class="w-full max-w-md space-y-6">
+              
+              <!-- Login Card -->
+              <div class="bg-white dark:bg-brand-cardDark rounded-3xl p-8 border border-slate-200 dark:border-slate-700 shadow-2xl relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-brand-red/10 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+
+                <!-- Avatar Icon -->
+                <div class="text-center mb-6">
+                  <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-brand-red/10 text-brand-red mb-3">
+                    <i class="fa-solid fa-graduation-cap text-3xl"></i>
+                  </div>
+                  <h1 class="text-2xl font-black text-slate-900 dark:text-white">Portal de Acesso SAVE</h1>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Selecione seu perfil e informe suas credenciais</p>
+                </div>
+
+                <form onsubmit="app.handleLoginSubmit(event)" class="space-y-4">
+                  
+                  <!-- Profile Selector -->
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Perfil de Acesso *</label>
+                    <select id="login-role" onchange="app.updateLoginFieldsHint()" class="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-brand-red">
+                      <option value="aluno">Aluno</option>
+                      <option value="responsavel">Responsável</option>
+                      <option value="professor">Professor</option>
+                      <option value="administrador">Administrador</option>
+                      <option value="assistente">Assistente</option>
+                    </select>
+                  </div>
+
+                  <!-- Dynamic Credential Fields -->
+                  <div>
+                    <label id="login-identifier-label" class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">RM do Aluno *</label>
+                    <div class="relative">
+                      <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i class="fa-solid fa-id-card"></i></span>
+                      <input type="text" id="login-identifier" placeholder="Digite o RM do Aluno" required class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red">
+                    </div>
+                  </div>
+
+                  <div>
+                    <label class="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">Senha de Acesso *</label>
+                    <div class="relative">
+                      <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i class="fa-solid fa-lock"></i></span>
+                      <input type="password" id="login-password" placeholder="••••••••" required class="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-brand-red">
+                    </div>
+                  </div>
+
+                  <button type="submit" class="w-full py-3.5 px-4 bg-brand-red hover:bg-brand-redHover text-white font-bold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2">
+                    <span>Entrar no Sistema</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                  </button>
+                </form>
+
+                <!-- Actions: First Access, Forgot Pass, Visitor -->
+                <div class="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700/60 space-y-3">
+                  <div class="grid grid-cols-2 gap-2">
+                    <button onclick="app.openModalFirstAccess()" class="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all text-center">
+                      <i class="fa-solid fa-user-plus mr-1 text-brand-red"></i> Primeiro Acesso
+                    </button>
+                    <button onclick="app.openModalResetAccess()" class="py-2.5 px-3 rounded-xl bg-slate-100 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all text-center">
+                      <i class="fa-solid fa-key mr-1 text-amber-500"></i> Esqueci a Senha
+                    </button>
+                  </div>
+
+                  <button onclick="app.accessAsVisitor()" class="w-full py-2.5 px-4 rounded-xl border border-dashed border-slate-300 dark:border-slate-600 hover:border-brand-red text-slate-600 dark:text-slate-300 hover:text-brand-red text-xs font-bold transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-eye"></i> Entrar como Visitante
+                  </button>
+                </div>
+
+              </div>
+
+              <!-- Initial Credentials Quick Helper Banner (Ideal for Prototype Evaluators) -->
+              <div class="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 text-xs space-y-2">
+                <div class="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-2">
+                  <i class="fa-solid fa-circle-info"></i> Credenciais Pré-cadastradas para Teste do Protótipo:
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
+                  <div>• <strong>Aluno:</strong> RM <code class="bg-amber-200/50 dark:bg-slate-800 px-1 rounded">2026001</code> / Senha: <code class="bg-amber-200/50 dark:bg-slate-800 px-1 rounded">Aluno123!</code></div>
+                  <div>• <strong>Responsável:</strong> RM <code class="bg-amber-200/50 dark:bg-slate-800 px-1 rounded">2026001</code> / Senha: <code class="bg-amber-200/50 dark:bg-slate-800 px-1 rounded">Resp123!</code></div>
+                  <div>• <strong>Professor:</strong> Login <code class="bg-amber-200/50 dark:bg-slate-800 px-1 rounded">joao.silva</code> / Senha: <code class="bg-amber-200/50 dark:bg-slate-800 px-1 rounded">Prof123!</code></div>
+                  <div>• <strong>Admin:</strong> Login <code class="bg-amber-200/50 dark:bg-slate-800 px-1 rounded">admin</code> / Senha: <code class="bg-amber-200/50 dark:bg-slate-800 px-1 rounded">Admin123!</code></div>
+                  <div>• <strong>Assistente:</strong> Login <code class="bg-amber-200/50 dark:bg-slate-800 px-1 rounded">assistente1</code> / Senha: <code class="bg-amber-200/50 dark:bg-slate-800 px-1 rounded">Assist123!</code></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        `;
+
+        this.updateLoginFieldsHint();
+      }
+
+      updateLoginFieldsHint() {
+        const role = document.getElementById('login-role').value;
+        const label = document.getElementById('login-identifier-label');
+        const input = document.getElementById('login-identifier');
+
+        if (role === 'aluno') {
+          label.innerText = 'Registro de Matrícula (RM) do Aluno *';
+          input.placeholder = 'Ex: 2026001';
+        } else if (role === 'responsavel') {
+          label.innerText = 'RM do Aluno Vinculado *';
+          input.placeholder = 'Ex: 2026001';
+        } else if (role === 'professor') {
+          label.innerText = 'Nome.Sobrenome de Registro *';
+          input.placeholder = 'Ex: joao.silva';
+        } else if (role === 'administrador' || role === 'assistente') {
+          label.innerText = 'Nome de Usuário *';
+          input.placeholder = 'Ex: admin ou assistente1';
+        }
+      }
+
+      handleLoginSubmit(e) {
+        e.preventDefault();
+        const role = document.getElementById('login-role').value;
+        const identifier = document.getElementById('login-identifier').value.trim();
+        const password = document.getElementById('login-password').value;
+
+        if (!identifier || !password) {
+          this.toast('Preencha todos os campos obrigatórios.', 'error');
+          return;
+        }
+
+        // Match against database
+        const user = this.db.users.find(u => {
+          if (u.role !== role) return false;
+          if (role === 'aluno' || role === 'responsavel') {
+            return u.rm === identifier && u.senhaHash === password;
+          } else {
+            return u.login === identifier && u.senhaHash === password;
+          }
+        });
+
+        if (user) {
+          this.login(user);
+        } else {
+          this.toast('Credenciais inválidas ou cadastro não localizado para o perfil selecionado.', 'error');
+        }
+      }
+
+      accessAsVisitor() {
+        const visitorUser = {
+          id: 'SYS-GUEST',
+          role: 'visitante',
+          nome: 'Visitante Institucional',
+          login: 'visitante'
+        };
+        this.login(visitorUser);
+      }
+
+      openModalFirstAccess() {
+        const modal = document.getElementById('modal-container');
+        const content = document.getElementById('modal-content');
+
+        content.innerHTML = `
+          <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-user-check text-brand-red"></i> Primeiro Acesso ao SAVE
+            </h3>
+            <button onclick="app.closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+          </div>
+
+          <form onsubmit="app.handleFirstAccessSubmit(event)" class="space-y-4 mt-4">
+            <div>
+              <label class="block text-xs font-bold mb-1">Perfil para Primeiro Acesso *</label>
+              <select id="fa-role" onchange="app.toggleFirstAccessFields()" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+                <option value="aluno">Aluno</option>
+                <option value="responsavel">Responsável</option>
+                <option value="professor">Professor</option>
+              </select>
+            </div>
+
+            <!-- Dynamic Fields -->
+            <div id="fa-fields-container" class="space-y-3">
+              <!-- Injected by JS -->
+            </div>
+
+            <div class="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
+              <p class="text-[11px] text-slate-500">
+                <strong>Regras da Senha:</strong> 8 a 16 caracteres, contendo pelo menos 1 letra, 1 número e 1 caractere especial. Não pode conter nome, RM ou CPF.
+              </p>
+              <div>
+                <label class="block text-xs font-bold mb-1">Nova Senha *</label>
+                <input type="password" id="fa-pass" required placeholder="Ex: MinhaSenha123!" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-bold mb-1">Confirmar Senha *</label>
+                <input type="password" id="fa-pass-confirm" required placeholder="Repita a senha" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3">
+              <button type="button" onclick="app.closeModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 dark:bg-slate-700">Cancelar</button>
+              <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-red text-white hover:bg-brand-redHover shadow">Criar Senha e Ativar</button>
+            </div>
+          </form>
+        `;
+
+        modal.classList.remove('hidden');
+        this.toggleFirstAccessFields();
+      }
+
+      toggleFirstAccessFields() {
+        const role = document.getElementById('fa-role').value;
+        const container = document.getElementById('fa-fields-container');
+
+        if (role === 'aluno') {
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-bold mb-1">RM do Aluno *</label>
+              <input type="text" id="fa-rm" required placeholder="Ex: 2026001" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome Completo do Aluno *</label>
+              <input type="text" id="fa-nome-aluno" required placeholder="Ex: Lucas Mendes" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">CPF do Aluno *</label>
+              <input type="text" id="fa-cpf-aluno" required placeholder="Ex: 555.666.777-88" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+          `;
+        } else if (role === 'responsavel') {
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-bold mb-1">RM do Aluno *</label>
+              <input type="text" id="fa-rm" required placeholder="Ex: 2026001" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome Completo do Responsável *</label>
+              <input type="text" id="fa-nome-resp" required placeholder="Ex: Roberto Mendes" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome Completo do Aluno *</label>
+              <input type="text" id="fa-nome-aluno" required placeholder="Ex: Lucas Mendes" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">CPF do Responsável/Aluno *</label>
+              <input type="text" id="fa-cpf" required placeholder="Ex: 666.777.888-99" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+          `;
+        } else if (role === 'professor') {
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome Completo do Professor *</label>
+              <input type="text" id="fa-nome-prof" required placeholder="Ex: João Silva" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">CPF do Professor *</label>
+              <input type="text" id="fa-cpf-prof" required placeholder="Ex: 333.444.555-66" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+          `;
+        }
+      }
+
+      handleFirstAccessSubmit(e) {
+        e.preventDefault();
+        const role = document.getElementById('fa-role').value;
+        const pass = document.getElementById('fa-pass').value;
+        const passConfirm = document.getElementById('fa-pass-confirm').value;
+
+        if (pass !== passConfirm) {
+          this.toast('As senhas digitadas não coincidem.', 'error');
+          return;
+        }
+
+        let userToMatch = null;
+
+        if (role === 'aluno') {
+          const rm = document.getElementById('fa-rm').value.trim();
+          const nome = document.getElementById('fa-nome-aluno').value.trim();
+          const cpf = document.getElementById('fa-cpf-aluno').value.trim();
+
+          userToMatch = this.db.users.find(u => u.role === 'aluno' && u.rm === rm && u.nome.toLowerCase() === nome.toLowerCase() && u.cpf.replace(/\D/g, '') === cpf.replace(/\D/g, ''));
+        } else if (role === 'responsavel') {
+          const rm = document.getElementById('fa-rm').value.trim();
+          const nomeResp = document.getElementById('fa-nome-resp').value.trim();
+          const cpf = document.getElementById('fa-cpf').value.trim();
+
+          userToMatch = this.db.users.find(u => u.role === 'responsavel' && u.rm === rm && u.nome.toLowerCase() === nomeResp.toLowerCase() && u.cpf.replace(/\D/g, '') === cpf.replace(/\D/g, ''));
+        } else if (role === 'professor') {
+          const nomeProf = document.getElementById('fa-nome-prof').value.trim();
+          const cpfProf = document.getElementById('fa-cpf-prof').value.trim();
+
+          userToMatch = this.db.users.find(u => u.role === 'professor' && u.nome.toLowerCase() === nomeProf.toLowerCase() && u.cpf.replace(/\D/g, '') === cpfProf.replace(/\D/g, ''));
+        }
+
+        if (!userToMatch) {
+          this.toast('Dados de cadastro prévio não localizados no sistema. Fale com a Administração.', 'error');
+          return;
+        }
+
+        // Validate password against rule
+        const passErr = this.validatePasswordRules(pass, userToMatch);
+        if (passErr) {
+          this.toast(passErr, 'error');
+          return;
+        }
+
+        // Save new password
+        userToMatch.senhaHash = pass;
+        this.saveDB();
+        this.closeModal();
+        this.toast('Senha cadastrada com sucesso! Agora você já pode fazer login.', 'success');
+      }
+
+      openModalResetAccess() {
+        const modal = document.getElementById('modal-container');
+        const content = document.getElementById('modal-content');
+
+        content.innerHTML = `
+          <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-key text-amber-500"></i> Recuperar Acesso
+            </h3>
+            <button onclick="app.closeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"><i class="fa-solid fa-xmark text-lg"></i></button>
+          </div>
+
+          <form onsubmit="app.handleResetAccessSubmit(event)" class="space-y-4 mt-4">
+            <div>
+              <label class="block text-xs font-bold mb-1">Perfil *</label>
+              <select id="reset-role" onchange="app.toggleResetAccessFields()" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+                <option value="aluno">Aluno</option>
+                <option value="responsavel">Responsável</option>
+                <option value="professor">Professor</option>
+              </select>
+            </div>
+
+            <div id="reset-fields-container" class="space-y-3"></div>
+
+            <div class="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-3">
+              <div>
+                <label class="block text-xs font-bold mb-1">Nova Senha *</label>
+                <input type="password" id="reset-pass" required placeholder="Digite a nova senha" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+              </div>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3">
+              <button type="button" onclick="app.closeModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 dark:bg-slate-700">Cancelar</button>
+              <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-amber-600 text-white hover:bg-amber-700 shadow">Redefinir Senha</button>
+            </div>
+          </form>
+        `;
+
+        modal.classList.remove('hidden');
+        this.toggleResetAccessFields();
+      }
+
+      toggleResetAccessFields() {
+        const role = document.getElementById('reset-role').value;
+        const container = document.getElementById('reset-fields-container');
+
+        if (role === 'aluno' || role === 'responsavel') {
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-bold mb-1">RM do Aluno *</label>
+              <input type="text" id="reset-rm" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome Completo *</label>
+              <input type="text" id="reset-nome" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">CPF *</label>
+              <input type="text" id="reset-cpf" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+          `;
+        } else {
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome Completo do Professor *</label>
+              <input type="text" id="reset-nome" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">CPF do Professor *</label>
+              <input type="text" id="reset-cpf" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-sm">
+            </div>
+          `;
+        }
+      }
+
+      handleResetAccessSubmit(e) {
+        e.preventDefault();
+        const role = document.getElementById('reset-role').value;
+        const pass = document.getElementById('reset-pass').value;
+
+        let userToMatch = null;
+        if (role === 'aluno' || role === 'responsavel') {
+          const rm = document.getElementById('reset-rm').value.trim();
+          const nome = document.getElementById('reset-nome').value.trim();
+          const cpf = document.getElementById('reset-cpf').value.trim();
+
+          userToMatch = this.db.users.find(u => u.role === role && u.rm === rm && u.nome.toLowerCase() === nome.toLowerCase() && u.cpf.replace(/\D/g, '') === cpf.replace(/\D/g, ''));
+        } else {
+          const nome = document.getElementById('reset-nome').value.trim();
+          const cpf = document.getElementById('reset-cpf').value.trim();
+
+          userToMatch = this.db.users.find(u => u.role === 'professor' && u.nome.toLowerCase() === nome.toLowerCase() && u.cpf.replace(/\D/g, '') === cpf.replace(/\D/g, ''));
+        }
+
+        if (!userToMatch) {
+          this.toast('Dados informados não correspondem ao cadastro registrado.', 'error');
+          return;
+        }
+
+        const passErr = this.validatePasswordRules(pass, userToMatch);
+        if (passErr) {
+          this.toast(passErr, 'error');
+          return;
+        }
+
+        userToMatch.senhaHash = pass;
+        this.saveDB();
+        this.closeModal();
+        this.toast('Senha redefinida com sucesso! Você já pode entrar com a nova senha.', 'success');
+      }
+
+      closeModal() {
+        const modal = document.getElementById('modal-container');
+        if (modal) modal.classList.add('hidden');
+      }
+
+
+      /* ===================================================================
+         CHATBOT ENGINE (COMPONENTE PRINCIPAL MULTI-PERFIL)
+         =================================================================== */
+      renderChatbotComponent(isVisitor = false) {
+        return `
+          <div class="bg-white dark:bg-brand-cardDark rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col h-[520px] overflow-hidden">
+            <!-- Chat Header -->
+            <div class="p-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800">
+              <div class="flex items-center gap-3">
+                <div class="relative w-10 h-10 rounded-xl bg-brand-red flex items-center justify-center text-white shadow">
+                  <i class="fa-solid fa-robot text-xl"></i>
+                  <span class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>
+                </div>
+                <div>
+                  <h3 class="font-bold text-sm">Assistente Virtual SAVE</h3>
+                  <p class="text-[11px] text-slate-300">${isVisitor ? 'Modo Visitante (Acesso Limitado)' : 'Atendimento Inteligente 24h'}</p>
+                </div>
+              </div>
+              <span class="text-xs bg-white/10 px-2.5 py-1 rounded-full font-medium">IA SAVE</span>
+            </div>
+
+            <!-- Chat Messages Log -->
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-50/50 dark:bg-brand-darkerBg/50 text-xs">
+              <div class="flex gap-2 max-w-[85%]">
+                <div class="w-7 h-7 rounded-lg bg-brand-red text-white flex items-center justify-center shrink-0 font-bold">S</div>
+                <div class="bg-white dark:bg-brand-cardDark p-3 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700/80 shadow-sm text-slate-700 dark:text-slate-200 space-y-1">
+                  <p>Olá! Sou o <strong>SAVE Bot</strong>, seu assistente virtual escolar. Como posso te ajudar hoje?</p>
+                  <p class="text-[10px] text-slate-400">Você pode perguntar sobre rematrícula, horários, atestados, declarações ou calendário escolar!</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chat Quick Tags -->
+            <div class="px-4 py-2 bg-slate-100 dark:bg-brand-darkerBg border-t border-slate-200 dark:border-slate-800 flex items-center gap-1.5 overflow-x-auto text-[11px]">
+              <span class="text-slate-400 font-medium shrink-0"><i class="fa-solid fa-bolt text-amber-500"></i> Sugestões:</span>
+              <button onclick="app.sendQuickChat('Como solicito um atestado?')" class="whitespace-nowrap px-2.5 py-1 rounded-lg bg-white dark:bg-brand-cardDark hover:border-brand-red border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">Atestados</button>
+              <button onclick="app.sendQuickChat('Como ver meus horários?')" class="whitespace-nowrap px-2.5 py-1 rounded-lg bg-white dark:bg-brand-cardDark hover:border-brand-red border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">Horários</button>
+              <button onclick="app.sendQuickChat('Quais os prazos do calendário?')" class="whitespace-nowrap px-2.5 py-1 rounded-lg bg-white dark:bg-brand-cardDark hover:border-brand-red border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">Calendário</button>
+            </div>
+
+            <!-- Chat Input Bar -->
+            <form onsubmit="app.handleChatSubmit(event, ${isVisitor})" class="p-3 bg-white dark:bg-brand-cardDark border-t border-slate-200 dark:border-slate-700 flex items-center gap-2">
+              <input type="text" id="chat-input" placeholder="Digite sua dúvida escolar..." class="flex-1 px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs focus:outline-none focus:ring-2 focus:ring-brand-red">
+              <button type="submit" class="p-2.5 rounded-xl bg-brand-red hover:bg-brand-redHover text-white shadow transition-all">
+                <i class="fa-solid fa-paper-plane text-xs"></i>
+              </button>
+            </form>
+          </div>
+        `;
+      }
+
+      sendQuickChat(msg) {
+        const input = document.getElementById('chat-input');
+        if (input) {
+          input.value = msg;
+          input.form.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+        }
+      }
+
+      handleChatSubmit(e, isVisitor) {
+        e.preventDefault();
+        const input = document.getElementById('chat-input');
+        const query = input.value.trim();
+        if (!query) return;
+
+        input.value = '';
+        this.appendChatMessage(query, 'user');
+
+        // Processing Answer from KB
+        setTimeout(() => {
+          const reply = this.processChatQuery(query, isVisitor);
+          this.appendChatMessage(reply, 'bot');
+        }, 300);
+      }
+
+      appendChatMessage(text, sender) {
+        const chatBox = document.getElementById('chat-messages');
+        if (!chatBox) return;
+
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `flex gap-2 max-w-[85%] ${sender === 'user' ? 'ml-auto justify-end' : ''} animate-fadeIn`;
+
+        if (sender === 'bot') {
+          msgDiv.innerHTML = `
+            <div class="w-7 h-7 rounded-lg bg-brand-red text-white flex items-center justify-center shrink-0 font-bold">S</div>
+            <div class="bg-white dark:bg-brand-cardDark p-3 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700/80 shadow-sm text-slate-700 dark:text-slate-200">
+              ${text}
+            </div>
+          `;
+        } else {
+          msgDiv.innerHTML = `
+            <div class="bg-brand-red text-white p-3 rounded-2xl rounded-tr-none shadow-sm">
+              ${text}
+            </div>
+            <div class="w-7 h-7 rounded-lg bg-slate-700 text-white flex items-center justify-center shrink-0 font-bold">U</div>
+          `;
+        }
+
+        chatBox.appendChild(msgDiv);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      processChatQuery(query, isVisitor) {
+        const lowerQ = query.toLowerCase();
+
+        if (isVisitor) {
+          // Limited Visitor Chat logic
+          if (lowerQ.includes('curso') || lowerQ.includes('escola') || lowerQ.includes('endereço') || lowerQ.includes('contato')) {
+            return "A instituição oferece turmas do Ensino Médio regular. Atendimento de Segunda a Sexta, das 07h30 às 18h00. E-mail: contato@escola.edu.br.";
+          }
+          if (lowerQ.includes('calendario') || lowerQ.includes('evento')) {
+            return "Você pode consultar as datas de início das aulas e eventos gerais na aba Calendário do perfil de Visitante!";
+          }
+          return "Como visitante, meu acesso é limitado a orientações públicas. Para solicitar documentos ou atestados, faça login no sistema.";
+        }
+
+        // Full KB Search for Authenticated Users
+        let bestMatch = null;
+        let maxMatches = 0;
+
+        this.db.knowledgeBase.forEach(kb => {
+          const keywords = kb.palavrasChave.split(' ');
+          let matches = 0;
+          keywords.forEach(kw => {
+            if (lowerQ.includes(kw.toLowerCase())) matches++;
+          });
+          if (matches > maxMatches) {
+            maxMatches = matches;
+            bestMatch = kb;
+          }
+        });
+
+        if (bestMatch && maxMatches > 0) {
+          return `<strong>${bestMatch.pergunta}</strong><br><br>${bestMatch.resposta}`;
+        }
+
+        return "Desculpe, não encontrei uma resposta exata para essa dúvida no meu banco de dados atual. Experimente utilizar palavras como <em>atestado, rematrícula, histórico, calendário ou horários</em>.";
+      }
+
+
+      /* ===================================================================
+         COMMON TAB VIEWS: HORÁRIO & CALENDÁRIO
+         =================================================================== */
+      renderHorariosComponent() {
+        const turmas = this.db.turmas;
+        const profs = this.db.users.filter(u => u.role === 'professor');
+
+        return `
+          <div class="space-y-6 animate-fadeIn">
+            <!-- Filter Bar -->
+            <div class="bg-white dark:bg-brand-cardDark p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label class="block text-xs font-bold mb-1">Filtrar por Turma</label>
+                <select id="filter-horario-turma" onchange="app.updateHorarioGrid()" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                  <option value="TODAS">Todas as Turmas</option>
+                  ${turmas.map(t => `<option value="${t.id}">${t.nome}</option>`).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold mb-1">Filtrar por Dia</label>
+                <select id="filter-horario-dia" onchange="app.updateHorarioGrid()" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                  <option value="TODOS">Todos os Dias</option>
+                  ${this.db.horarioConfig.dias.map(d => `<option value="${d}">${d}</option>`).join('')}
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold mb-1">Filtrar por Período</label>
+                <select id="filter-horario-periodo" onchange="app.updateHorarioGrid()" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                  <option value="TODOS">Todos os Períodos</option>
+                  <option value="Matutino">Matutino</option>
+                  <option value="Vespertino">Vespertino</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold mb-1">Filtrar por Professor</label>
+                <select id="filter-horario-prof" onchange="app.updateHorarioGrid()" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                  <option value="TODOS">Todos os Professores</option>
+                  ${profs.map(p => `<option value="${p.login}">${p.nome}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+
+            <!-- Timetable Planilha Grid -->
+            <div class="bg-white dark:bg-brand-cardDark rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-lg">
+              <div class="p-4 bg-slate-100 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <h3 class="font-bold text-sm flex items-center gap-2">
+                  <i class="fa-solid fa-table-cells text-brand-red"></i> Planilha Geral de Horários
+                </h3>
+                <span class="text-xs text-slate-500">Horário Oficial Visto em Tempo Real</span>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-50 dark:bg-brand-darkerBg text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+                      <th class="p-3 border-r border-slate-200 dark:border-slate-700 w-28">Horário</th>
+                      ${this.db.horarioConfig.dias.map(d => `<th class="p-3 text-center border-r border-slate-200 dark:border-slate-700 min-w-[140px]">${d}</th>`).join('')}
+                    </tr>
+                  </thead>
+                  <tbody id="horarios-tbody">
+                    <!-- Dynamic Rows -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      updateHorarioGrid() {
+        const tbody = document.getElementById('horarios-tbody');
+        if (!tbody) return;
+
+        const fTurma = document.getElementById('filter-horario-turma').value;
+        const fDia = document.getElementById('filter-horario-dia').value;
+        const fPeriodo = document.getElementById('filter-horario-periodo').value;
+        const fProf = document.getElementById('filter-horario-prof').value;
+
+        const slots = this.db.horarioConfig.slots;
+        const dias = this.db.horarioConfig.dias;
+
+        tbody.innerHTML = '';
+
+        slots.forEach(slot => {
+          const tr = document.createElement('tr');
+          tr.className = 'border-b border-slate-200 dark:border-slate-700/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30';
+
+          let timeCell = `<td class="p-3 font-mono font-bold bg-slate-50/80 dark:bg-brand-darkerBg/80 border-r border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">${slot.inicio} - ${slot.fim}</td>`;
+          let cellsHtml = '';
+
+          dias.forEach(dia => {
+            if (fDia !== 'TODOS' && fDia !== dia) {
+              cellsHtml += `<td class="p-3 border-r border-slate-200 dark:border-slate-700 text-center opacity-30 bg-slate-100 dark:bg-slate-900">-</td>`;
+              return;
+            }
+
+            // Find matching schedule entries in real active timetable
+            let matches = this.db.horarioReal.filter(h => h.slotId === slot.id && h.dia === dia);
+
+            // Apply filters
+            if (fTurma !== 'TODAS') matches = matches.filter(h => h.turmaId === fTurma);
+            if (fProf !== 'TODOS') matches = matches.filter(h => h.profLogin === fProf);
+            if (fPeriodo !== 'TODOS') {
+              matches = matches.filter(h => {
+                const turmaObj = this.db.turmas.find(t => t.id === h.turmaId);
+                return turmaObj && turmaObj.periodo === fPeriodo;
+              });
+            }
+
+            if (matches.length === 0) {
+              cellsHtml += `<td class="p-3 border-r border-slate-200 dark:border-slate-700 text-center text-slate-400 font-light">Livre</td>`;
+            } else {
+              const cellContent = matches.map(m => {
+                const disc = this.db.disciplinas.find(d => d.id === m.discId);
+                const turma = this.db.turmas.find(t => t.id === m.turmaId);
+                const prof = this.db.users.find(u => u.login === m.profLogin);
+
+                return `
+                  <div class="p-2 rounded-xl bg-brand-red/10 border border-brand-red/30 mb-1 text-left space-y-0.5">
+                    <div class="font-bold text-brand-red">${disc ? disc.nome : 'Disciplina'} (${disc ? disc.sigla : ''})</div>
+                    <div class="text-[10px] text-slate-600 dark:text-slate-300"><i class="fa-solid fa-users text-slate-400"></i> ${turma ? turma.nome : ''}</div>
+                    <div class="text-[10px] text-slate-500"><i class="fa-solid fa-chalkboard-user text-slate-400"></i> ${prof ? prof.nome : m.profLogin}</div>
+                  </div>
+                `;
+              }).join('');
+
+              cellsHtml += `<td class="p-2 border-r border-slate-200 dark:border-slate-700 align-top">${cellContent}</td>`;
+            }
+          });
+
+          tr.innerHTML = timeCell + cellsHtml;
+          tbody.appendChild(tr);
+        });
+      }
+
+      renderCalendarioComponent() {
+        const events = this.db.calendario;
+
+        return `
+          <div class="space-y-6 animate-fadeIn">
+            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                <div>
+                  <h2 class="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-calendar-days text-brand-red"></i> Calendário Escolar 2026
+                  </h2>
+                  <p class="text-xs text-slate-500">Dias letivos, eventos, conselhos escolares e prazos importantes</p>
+                </div>
+                <span class="text-xs px-3 py-1 bg-brand-red/10 text-brand-red rounded-full font-bold">Ano Letivo Ativo</span>
+              </div>
+
+              <!-- Events List Grid -->
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                ${events.map(ev => {
+                  const typeColors = {
+                    'Letivo': 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+                    'Atividade': 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+                    'Prazo': 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+                    'Conselho': 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+                    'Viagem': 'bg-rose-500/10 text-rose-600 border-rose-500/20'
+                  };
+
+                  return `
+                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 space-y-2 hover:border-brand-red transition-all">
+                      <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-md border ${typeColors[ev.tipo] || 'bg-slate-200 text-slate-700'}">${ev.tipo}</span>
+                        <span class="text-xs font-mono font-bold text-slate-500"><i class="fa-regular fa-clock"></i> ${ev.data}</span>
+                      </div>
+                      <h4 class="font-bold text-sm text-slate-800 dark:text-slate-100">${ev.titulo}</h4>
+                      <p class="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">${ev.desc}</p>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+
+      /* ===================================================================
+         TELA 2: DASHBOARD DO ALUNO
+         =================================================================== */
+      renderAlunoView() {
+        const viewport = document.getElementById('app-viewport');
+        const user = this.currentUser;
+
+        viewport.innerHTML = `
+          <div class="space-y-6 animate-fadeIn">
+            
+            <!-- Student Header Profile Banner -->
+            <div class="bg-white dark:bg-brand-cardDark rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-brand-red/10 border border-brand-red/30 flex items-center justify-center text-brand-red font-black text-2xl">
+                  <i class="fa-solid fa-user-graduate"></i>
+                </div>
+                <div>
+                  <h1 class="text-xl font-black text-slate-900 dark:text-white">${user.nome}</h1>
+                  <div class="flex flex-wrap gap-3 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <span><i class="fa-solid fa-id-card text-brand-red"></i> RM: <strong>${user.rm}</strong></span>
+                    <span>•</span>
+                    <span><i class="fa-solid fa-graduation-cap text-brand-red"></i> ${user.nomeTurma || '3º Ano A'}</span>
+                  </div>
+                </div>
+              </div>
+              <span class="px-3 py-1 rounded-full text-xs font-bold bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">Aluno Regular</span>
+            </div>
+
+            <!-- Tab Navigation Buttons -->
+            <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2 overflow-x-auto">
+              <button onclick="app.switchAlunoTab('chat')" id="tab-aluno-chat" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-brand-red text-white shadow">
+                <i class="fa-solid fa-robot mr-1.5"></i> Chatbot Inteligente
+              </button>
+              <button onclick="app.switchAlunoTab('horario')" id="tab-aluno-horario" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-table-cells mr-1.5"></i> Horário de Aulas
+              </button>
+              <button onclick="app.switchAlunoTab('atestado')" id="tab-aluno-atestado" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-file-medical mr-1.5"></i> Entrega de Atestado
+              </button>
+              <button onclick="app.switchAlunoTab('requerimentos')" id="tab-aluno-requerimentos" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-file-signature mr-1.5"></i> Requerimentos
+              </button>
+              <button onclick="app.switchAlunoTab('calendario')" id="tab-aluno-calendario" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-calendar-days mr-1.5"></i> Calendário Escolar
+              </button>
+            </div>
+
+            <!-- Active Tab Content Area -->
+            <div id="aluno-tab-content">
+              ${this.renderChatbotComponent(false)}
+            </div>
+
+          </div>
+        `;
+      }
+
+      switchAlunoTab(tabName) {
+        const buttons = document.querySelectorAll('[id^="tab-aluno-"]');
+        buttons.forEach(b => {
+          b.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200';
+        });
+
+        const activeBtn = document.getElementById(`tab-aluno-${tabName}`);
+        if (activeBtn) {
+          activeBtn.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-brand-red text-white shadow';
+        }
+
+        const container = document.getElementById('aluno-tab-content');
+        if (!container) return;
+
+        if (tabName === 'chat') {
+          container.innerHTML = this.renderChatbotComponent(false);
+        } else if (tabName === 'horario') {
+          container.innerHTML = this.renderHorariosComponent();
+          this.updateHorarioGrid();
+        } else if (tabName === 'atestado') {
+          container.innerHTML = this.renderAtestadoForm();
+        } else if (tabName === 'requerimentos') {
+          container.innerHTML = this.renderRequerimentosComponent();
+        } else if (tabName === 'calendario') {
+          container.innerHTML = this.renderCalendarioComponent();
+        }
+      }
+
+      renderAtestadoForm() {
+        const user = this.currentUser;
+
+        return `
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+            <!-- Form Column -->
+            <div class="lg:col-span-2 bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <div>
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-notes-medical text-brand-red"></i> Envio de Atestado Médico
+                </h3>
+                <p class="text-xs text-slate-500">Envie a foto ou documento para justificativa de faltas</p>
+              </div>
+
+              <form onsubmit="app.handleAtestadoSubmit(event)" class="space-y-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-bold mb-1">Nome do Aluno *</label>
+                    <input type="text" id="atestado-nome" value="${user.alunoNome || user.nome}" readonly class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold mb-1">RM do Aluno *</label>
+                    <input type="text" id="atestado-rm" value="${user.rm}" readonly class="w-full p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                  </div>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold mb-1">Curso / Turma Matriculado *</label>
+                  <select id="atestado-curso" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs font-medium">
+                    ${this.db.turmas.map(t => `<option value="${t.nome}">${t.nome}</option>`).join('')}
+                  </select>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label class="block text-xs font-bold mb-1">Data do Atestado *</label>
+                    <input type="date" id="atestado-data" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                  </div>
+                  <div>
+                    <label class="block text-xs font-bold mb-1">Quantidade de Dias *</label>
+                    <input type="number" id="atestado-dias" min="1" max="60" value="1" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                  </div>
+                </div>
+
+                <!-- Attachment (Photo or File Upload) -->
+                <div>
+                  <label class="block text-xs font-bold mb-1">Comprovante (Tirar Foto ou Upload) *</label>
+                  <div class="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-2xl p-4 text-center hover:border-brand-red transition-all relative">
+                    <input type="file" id="atestado-file" accept="image/*,.pdf" onchange="app.previewAtestadoFile(event)" required class="absolute inset-0 opacity-0 cursor-pointer">
+                    <i class="fa-solid fa-cloud-arrow-up text-2xl text-brand-red mb-2"></i>
+                    <p id="atestado-file-label" class="text-xs font-bold text-slate-700 dark:text-slate-300">Clique ou arraste para enviar foto ou PDF do atestado</p>
+                    <p class="text-[10px] text-slate-400 mt-1">Suporta JPG, PNG ou PDF até 10MB</p>
+                  </div>
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 bg-brand-red hover:bg-brand-redHover text-white font-bold rounded-xl text-xs shadow-lg transition-all flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-paper-plane"></i> Enviar Atestado para Análise
+                </button>
+              </form>
+            </div>
+
+            <!-- Sent Atestados History Sidebar -->
+            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-brand-red"></i> Meus Atestados Enviados
+              </h4>
+              
+              <div class="space-y-3">
+                ${this.db.atestados.filter(a => a.rmAluno === user.rm).map(a => {
+                  const statusBadges = {
+                    'Pendente': 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+                    'Recebido em Análise': 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+                    'Aceito': 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+                    'Recusado': 'bg-red-500/10 text-red-600 border-red-500/20'
+                  };
+
+                  return `
+                    <div class="p-3.5 rounded-2xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700/80 space-y-2 text-xs">
+                      <div class="flex justify-between items-center">
+                        <span class="font-bold text-slate-800 dark:text-slate-200">${a.dataAtestado} (${a.dias} dias)</span>
+                        <span class="badge-status ${statusBadges[a.status]}">${a.status}</span>
+                      </div>
+                      <p class="text-[11px] text-slate-500">Enviado em: ${a.dataEnvio}</p>
+                      ${a.status === 'Recusado' ? `<p class="p-2 rounded-lg bg-red-500/10 text-red-600 text-[10px] font-bold">Motivo: ${a.motivoRecusa || 'Documento ilegível'}</p>` : ''}
+                    </div>
+                  `;
+                }).join('') || '<p class="text-xs text-slate-400">Nenhum atestado enviado ainda.</p>'}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      previewAtestadoFile(e) {
+        const file = e.target.files[0];
+        const label = document.getElementById('atestado-file-label');
+        if (file && label) {
+          label.innerHTML = `<span class="text-emerald-600 dark:text-emerald-400 font-bold"><i class="fa-solid fa-file-check"></i> Arquivo Selecionado: ${file.name}</span>`;
+        }
+      }
+
+      handleAtestadoSubmit(e) {
+        e.preventDefault();
+        const user = this.currentUser;
+        const dataAtestado = document.getElementById('atestado-data').value;
+        const dias = parseInt(document.getElementById('atestado-dias').value);
+        const curso = document.getElementById('atestado-curso').value;
+        const fileInput = document.getElementById('atestado-file');
+
+        if (!dataAtestado || !dias || !fileInput.files[0]) {
+          this.toast('Preencha a data, número de dias e selecione o arquivo.', 'error');
+          return;
+        }
+
+        const newAtestado = {
+          id: 'ATE-' + Math.floor(Math.random() * 9000 + 1000),
+          rmAluno: user.rm,
+          nomeAluno: user.alunoNome || user.nome,
+          curso: curso,
+          dataAtestado: dataAtestado,
+          dias: dias,
+          dataEnvio: new Date().toISOString().split('T')[0],
+          status: 'Pendente',
+          motivoRecusa: '',
+          comprovanteNome: fileInput.files[0].name
+        };
+
+        this.db.atestados.unshift(newAtestado);
+        this.saveDB();
+        this.toast('Atestado enviado com sucesso para análise da secretaria!', 'success');
+        this.switchAlunoTab('atestado');
+      }
+
+      renderRequerimentosComponent() {
+        const user = this.currentUser;
+        const myRequests = this.db.requerimentos.filter(r => r.rmAluno === user.rm);
+
+        const docTypes = [
+          'Declaração de Matrícula',
+          'Declaração de frequência',
+          'Histórico escolar',
+          'Diploma',
+          'Certificado',
+          'Declaração de conclusão de curso',
+          'Declaração de Escolaridade pública'
+        ];
+
+        return `
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+            
+            <!-- Request Form Column -->
+            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <div>
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-file-signature text-brand-red"></i> Pedido de Documentos
+                </h3>
+                <p class="text-xs text-slate-500">Solicite declarações e certidões acadêmicas</p>
+              </div>
+
+              <form onsubmit="app.handleRequerimentoSubmit(event)" class="space-y-4">
+                <div>
+                  <label class="block text-xs font-bold mb-1">Tipo de Documento *</label>
+                  <select id="req-tipo" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs font-semibold">
+                    ${docTypes.map(d => `<option value="${d}">${d}</option>`).join('')}
+                  </select>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold mb-1">Motivo do Pedido *</label>
+                  <textarea id="req-motivo" required rows="2" placeholder="Ex: Para apresentação em empresa de estágio ou gratificação..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs"></textarea>
+                </div>
+
+                <div>
+                  <label class="block text-xs font-bold mb-1">Informações Complementares</label>
+                  <textarea id="req-complemento" rows="2" placeholder="Ex: Preciso da via impressa com carimbo de autenticidade..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs"></textarea>
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 bg-brand-red hover:bg-brand-redHover text-white font-bold rounded-xl text-xs shadow-lg transition-all flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-paper-plane"></i> Enviar Pedido
+                </button>
+              </form>
+            </div>
+
+            <!-- Request Dashboard Status Tracking Column -->
+            <div class="lg:col-span-2 bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-list-check text-brand-red"></i> Status dos Meus Requerimentos
+              </h3>
+
+              <div class="space-y-3">
+                ${myRequests.map(req => {
+                  const statusBadges = {
+                    'Pendente': 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+                    'Em Análise': 'bg-blue-500/10 text-blue-600 border-blue-500/20',
+                    'Aguardando Assinatura': 'bg-purple-500/10 text-purple-600 border-purple-500/20',
+                    'Pronto para retirada': 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20',
+                    'Entregue': 'bg-slate-500/10 text-slate-600 border-slate-500/20',
+                    'Recusado': 'bg-red-500/10 text-red-600 border-red-500/20'
+                  };
+
+                  return `
+                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700/80 space-y-3 text-xs">
+                      <div class="flex flex-wrap justify-between items-center gap-2">
+                        <div>
+                          <span class="font-bold text-sm text-slate-800 dark:text-slate-100">${req.tipo}</span>
+                          <span class="text-[10px] text-slate-400 block">ID: ${req.id} • Criado em ${req.dataCriacao}</span>
+                        </div>
+                        <span class="badge-status ${statusBadges[req.status]}">${req.status}</span>
+                      </div>
+
+                      <p class="text-slate-600 dark:text-slate-300"><strong>Motivo:</strong> ${req.motivo}</p>
+                      ${req.complemento ? `<p class="text-slate-500"><strong>Obs:</strong> ${req.complemento}</p>` : ''}
+                      
+                      ${req.status === 'Recusado' ? `
+                        <div class="p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 text-xs font-semibold">
+                          <i class="fa-solid fa-circle-xmark mr-1"></i> Motivo da Recusa: ${req.motivoRecusa || 'Não especificado.'}
+                        </div>
+                      ` : ''}
+
+                      <!-- Edit or Delete buttons ONLY available while status is Pendente -->
+                      ${req.status === 'Pendente' ? `
+                        <div class="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+                          <button onclick="app.openEditRequerimentoModal('${req.id}')" class="px-3 py-1.5 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold hover:bg-slate-300 transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-pen-to-square"></i> Editar
+                          </button>
+                          <button onclick="app.deleteRequerimento('${req.id}')" class="px-3 py-1.5 rounded-lg bg-brand-red/10 text-brand-red hover:bg-brand-red hover:text-white font-bold transition-all flex items-center gap-1">
+                            <i class="fa-solid fa-trash-can"></i> Excluir
+                          </button>
+                        </div>
+                      ` : ''}
+                    </div>
+                  `;
+                }).join('') || '<p class="text-xs text-slate-400">Nenhum requerimento aberto no momento.</p>'}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      handleRequerimentoSubmit(e) {
+        e.preventDefault();
+        const user = this.currentUser;
+        const tipo = document.getElementById('req-tipo').value;
+        const motivo = document.getElementById('req-motivo').value.trim();
+        const complemento = document.getElementById('req-complemento').value.trim();
+
+        if (!tipo || !motivo) {
+          this.toast('Informe o tipo do documento e o motivo do pedido.', 'error');
+          return;
+        }
+
+        const newReq = {
+          id: 'REQ-' + Math.floor(Math.random() * 9000 + 1000),
+          rmAluno: user.rm,
+          nomeAluno: user.alunoNome || user.nome,
+          tipo: tipo,
+          motivo: motivo,
+          complemento: complemento,
+          dataCriacao: new Date().toISOString().split('T')[0],
+          status: 'Pendente',
+          motivoRecusa: ''
+        };
+
+        this.db.requerimentos.unshift(newReq);
+        this.saveDB();
+        this.toast('Requerimento enviado com sucesso!', 'success');
+        
+        if (user.role === 'aluno') this.switchAlunoTab('requerimentos');
+        if (user.role === 'responsavel') this.switchRespTab('requerimentos');
+      }
+
+      openEditRequerimentoModal(reqId) {
+        const req = this.db.requerimentos.find(r => r.id === reqId);
+        if (!req || req.status !== 'Pendente') {
+          this.toast('Este requerimento não pode mais ser alterado.', 'error');
+          return;
+        }
+
+        const modal = document.getElementById('modal-container');
+        const content = document.getElementById('modal-content');
+
+        content.innerHTML = `
+          <div class="flex items-center justify-between pb-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-pen-to-square text-brand-red"></i> Editar Requerimento Pendente
+            </h3>
+            <button onclick="app.closeModal()" class="text-slate-400"><i class="fa-solid fa-xmark text-lg"></i></button>
+          </div>
+
+          <form onsubmit="app.handleSaveEditRequerimento(event, '${req.id}')" class="space-y-4 mt-4">
+            <div>
+              <label class="block text-xs font-bold mb-1">Motivo do Pedido *</label>
+              <textarea id="edit-req-motivo" required rows="2" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">${req.motivo}</textarea>
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Informações Complementares</label>
+              <textarea id="edit-req-complemento" rows="2" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">${req.complemento || ''}</textarea>
+            </div>
+
+            <div class="flex justify-end gap-2 pt-3">
+              <button type="button" onclick="app.closeModal()" class="px-4 py-2 rounded-xl text-xs font-bold bg-slate-200 dark:bg-slate-700">Cancelar</button>
+              <button type="submit" class="px-4 py-2 rounded-xl text-xs font-bold bg-brand-red text-white hover:bg-brand-redHover shadow">Salvar Alterações</button>
+            </div>
+          </form>
+        `;
+
+        modal.classList.remove('hidden');
+      }
+
+      handleSaveEditRequerimento(e, reqId) {
+        e.preventDefault();
+        const req = this.db.requerimentos.find(r => r.id === reqId);
+        if (req && req.status === 'Pendente') {
+          req.motivo = document.getElementById('edit-req-motivo').value.trim();
+          req.complemento = document.getElementById('edit-req-complemento').value.trim();
+          this.saveDB();
+          this.closeModal();
+          this.toast('Requerimento atualizado com sucesso.', 'success');
+
+          if (this.currentUser.role === 'aluno') this.switchAlunoTab('requerimentos');
+          if (this.currentUser.role === 'responsavel') this.switchRespTab('requerimentos');
+        }
+      }
+
+      deleteRequerimento(reqId) {
+        const reqIndex = this.db.requerimentos.findIndex(r => r.id === reqId);
+        if (reqIndex !== -1 && this.db.requerimentos[reqIndex].status === 'Pendente') {
+          this.db.requerimentos.splice(reqIndex, 1);
+          this.saveDB();
+          this.toast('Requerimento excluído com sucesso.', 'info');
+
+          if (this.currentUser.role === 'aluno') this.switchAlunoTab('requerimentos');
+          if (this.currentUser.role === 'responsavel') this.switchRespTab('requerimentos');
+        }
+      }
+
+
+      /* ===================================================================
+         TELA 3: DASHBOARD DO RESPONSÁVEL
+         =================================================================== */
+      renderResponsavelView() {
+        const viewport = document.getElementById('app-viewport');
+        const user = this.currentUser;
+
+        viewport.innerHTML = `
+          <div class="space-y-6 animate-fadeIn">
+            
+            <!-- Parent Header Profile Banner -->
+            <div class="bg-white dark:bg-brand-cardDark rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-600 font-black text-2xl">
+                  <i class="fa-solid fa-users-between-lines"></i>
+                </div>
+                <div>
+                  <h1 class="text-xl font-black text-slate-900 dark:text-white">${user.nome} (Responsável)</h1>
+                  <div class="flex flex-wrap gap-3 mt-1 text-xs text-slate-500 dark:text-slate-400">
+                    <span><i class="fa-solid fa-child text-brand-red"></i> Aluno Vinculado: <strong>${user.alunoNome || 'Lucas Mendes'}</strong></span>
+                    <span>•</span>
+                    <span><i class="fa-solid fa-id-card text-brand-red"></i> RM: <strong>${user.rm}</strong></span>
+                    <span>•</span>
+                    <span><i class="fa-solid fa-graduation-cap text-brand-red"></i> ${user.nomeTurma || '3º Ano A'}</span>
+                  </div>
+                </div>
+              </div>
+              <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-600 border border-amber-500/20">Responsável Legal</span>
+            </div>
+
+            <!-- Tab Buttons -->
+            <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2 overflow-x-auto">
+              <button onclick="app.switchRespTab('chat')" id="tab-resp-chat" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-brand-red text-white shadow">
+                <i class="fa-solid fa-robot mr-1.5"></i> Chatbot Inteligente
+              </button>
+              <button onclick="app.switchRespTab('horario')" id="tab-resp-horario" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-table-cells mr-1.5"></i> Horário de Aulas
+              </button>
+              <button onclick="app.switchRespTab('atestado')" id="tab-resp-atestado" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-file-medical mr-1.5"></i> Entrega de Atestado
+              </button>
+              <button onclick="app.switchRespTab('requerimentos')" id="tab-resp-requerimentos" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-file-signature mr-1.5"></i> Requerimentos
+              </button>
+              <button onclick="app.switchRespTab('calendario')" id="tab-resp-calendario" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-calendar-days mr-1.5"></i> Calendário Escolar
+              </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="resp-tab-content">
+              ${this.renderChatbotComponent(false)}
+            </div>
+
+          </div>
+        `;
+      }
+
+      switchRespTab(tabName) {
+        const buttons = document.querySelectorAll('[id^="tab-resp-"]');
+        buttons.forEach(b => {
+          b.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200';
+        });
+
+        const activeBtn = document.getElementById(`tab-resp-${tabName}`);
+        if (activeBtn) {
+          activeBtn.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-brand-red text-white shadow';
+        }
+
+        const container = document.getElementById('resp-tab-content');
+        if (!container) return;
+
+        if (tabName === 'chat') {
+          container.innerHTML = this.renderChatbotComponent(false);
+        } else if (tabName === 'horario') {
+          container.innerHTML = this.renderHorariosComponent();
+          this.updateHorarioGrid();
+        } else if (tabName === 'atestado') {
+          container.innerHTML = this.renderAtestadoForm();
+        } else if (tabName === 'requerimentos') {
+          container.innerHTML = this.renderRequerimentosComponent();
+        } else if (tabName === 'calendario') {
+          container.innerHTML = this.renderCalendarioComponent();
+        }
+      }
+
+
+      /* ===================================================================
+         TELA 4: DASHBOARD DO PROFESSOR
+         =================================================================== */
+      renderProfessorView() {
+        const viewport = document.getElementById('app-viewport');
+        const user = this.currentUser;
+
+        viewport.innerHTML = `
+          <div class="space-y-6 animate-fadeIn">
+            
+            <!-- Teacher Profile Header Banner -->
+            <div class="bg-white dark:bg-brand-cardDark rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-500 font-black text-2xl">
+                  <i class="fa-solid fa-chalkboard-user"></i>
+                </div>
+                <div>
+                  <h1 class="text-xl font-black text-slate-900 dark:text-white">Prof. ${user.nome}</h1>
+                  <p class="text-xs text-slate-500">Docente Registrado • ID do Sistema Reservado ao Admin</p>
+                </div>
+              </div>
+              <span class="px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 text-indigo-500 border border-indigo-500/20">Corpo Docente</span>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2 overflow-x-auto">
+              <button onclick="app.switchProfTab('chat')" id="tab-prof-chat" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-brand-red text-white shadow">
+                <i class="fa-solid fa-robot mr-1.5"></i> Chatbot Inteligente
+              </button>
+              <button onclick="app.switchProfTab('horario')" id="tab-prof-horario" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-table-cells mr-1.5"></i> Planilha de Horários
+              </button>
+              <button onclick="app.switchProfTab('calendario')" id="tab-prof-calendario" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-calendar-days mr-1.5"></i> Calendário Escolar
+              </button>
+              <button onclick="app.switchProfTab('turmas')" id="tab-prof-turmas" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-users-rectangle mr-1.5"></i> Minhas Turmas & Alunos
+              </button>
+            </div>
+
+            <!-- Active Tab Content -->
+            <div id="prof-tab-content">
+              ${this.renderChatbotComponent(false)}
+            </div>
+
+          </div>
+        `;
+      }
+
+      switchProfTab(tabName) {
+        const buttons = document.querySelectorAll('[id^="tab-prof-"]');
+        buttons.forEach(b => {
+          b.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200';
+        });
+
+        const activeBtn = document.getElementById(`tab-prof-${tabName}`);
+        if (activeBtn) {
+          activeBtn.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-brand-red text-white shadow';
+        }
+
+        const container = document.getElementById('prof-tab-content');
+        if (!container) return;
+
+        if (tabName === 'chat') {
+          container.innerHTML = this.renderChatbotComponent(false);
+        } else if (tabName === 'horario') {
+          container.innerHTML = this.renderHorariosComponent();
+          this.updateHorarioGrid();
+        } else if (tabName === 'calendario') {
+          container.innerHTML = this.renderCalendarioComponent();
+        } else if (tabName === 'turmas') {
+          container.innerHTML = this.renderProfTurmasComponent();
+        }
+      }
+
+      renderProfTurmasComponent() {
+        const user = this.currentUser;
+        // Find disciplines assigned to this prof
+        const myDiscs = this.db.disciplinas.filter(d => d.profLogin === user.login);
+        const myTurmaIds = [...new Set(myDiscs.map(d => d.turmaId))];
+        const myTurmas = this.db.turmas.filter(t => myTurmaIds.includes(t.id));
+
+        return `
+          <div class="space-y-6 animate-fadeIn">
+            <!-- Filter Options -->
+            <div class="bg-white dark:bg-brand-cardDark p-4 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold mb-1">Filtrar por Turma</label>
+                <select id="prof-filter-turma" onchange="app.updateProfStudentList()" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                  <option value="TODAS">Todas as minhas Turmas</option>
+                  ${myTurmas.map(t => `<option value="${t.id}">${t.nome}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold mb-1">Filtrar por Disciplina</label>
+                <select id="prof-filter-disc" onchange="app.updateProfStudentList()" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                  <option value="TODAS">Todas as Disciplinas</option>
+                  ${myDiscs.map(d => `<option value="${d.id}">${d.nome} (${d.sigla})</option>`).join('')}
+                </select>
+              </div>
+            </div>
+
+            <!-- Student Roster Grid -->
+            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-users text-brand-red"></i> Relação de Alunos Matriculados
+              </h3>
+
+              <div id="prof-students-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      updateProfStudentList() {
+        const container = document.getElementById('prof-students-container');
+        if (!container) return;
+
+        const fTurma = document.getElementById('prof-filter-turma').value;
+        const alunos = this.db.users.filter(u => u.role === 'aluno');
+
+        let filtered = alunos;
+        if (fTurma !== 'TODAS') {
+          filtered = filtered.filter(a => a.turmaId === fTurma);
+        }
+
+        if (filtered.length === 0) {
+          container.innerHTML = '<p class="text-xs text-slate-400 col-span-3">Nenhum aluno encontrado para os filtros selecionados.</p>';
+          return;
+        }
+
+        container.innerHTML = filtered.map(a => `
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700/80 space-y-1 text-xs">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-full bg-brand-red/10 text-brand-red flex items-center justify-center font-bold">
+                <i class="fa-solid fa-user-graduate"></i>
+              </div>
+              <div>
+                <h4 class="font-bold text-slate-800 dark:text-slate-100 text-sm">${a.nome}</h4>
+                <p class="text-[10px] text-slate-400">RM: ${a.rm}</p>
+              </div>
+            </div>
+            <div class="pt-2 border-t border-slate-200 dark:border-slate-700 text-[11px] text-slate-500">
+              <p><strong>Turma:</strong> ${a.nomeTurma || '3º Ano A'}</p>
+              <p><strong>Responsável:</strong> ${a.resp1Nome || 'Não informado'}</p>
+            </div>
+          </div>
+        `).join('');
+      }
+
+
+      /* ===================================================================
+         TELA 5: DASHBOARD ADMINISTRADOR & ASSISTENTE
+         =================================================================== */
+      renderAdminView() {
+        const viewport = document.getElementById('app-viewport');
+        const user = this.currentUser;
+        const isAdmin = user.role === 'administrador';
+
+        viewport.innerHTML = `
+          <div class="space-y-6 animate-fadeIn">
+            
+            <!-- Admin Header Banner -->
+            <div class="bg-white dark:bg-brand-cardDark rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl ${isAdmin ? 'bg-brand-red/10 border-brand-red/30 text-brand-red' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-500'} border flex items-center justify-center font-black text-2xl">
+                  <i class="fa-solid ${isAdmin ? 'fa-user-shield' : 'fa-headset'}"></i>
+                </div>
+                <div>
+                  <h1 class="text-xl font-black text-slate-900 dark:text-white">${user.nome} (${isAdmin ? 'Administrador Geral' : 'Assistente Administrativo'})</h1>
+                  <p class="text-xs text-slate-500">
+                    ID do Sistema: <code class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono font-bold text-brand-red">${user.id}</code> (Visível apenas ao Admin)
+                  </p>
+                </div>
+              </div>
+              <span class="px-3 py-1 rounded-full text-xs font-bold ${isAdmin ? 'bg-brand-red/10 text-brand-red border border-brand-red/20' : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'}">
+                ${isAdmin ? 'Acesso Total' : 'Acesso Restrito'}
+              </span>
+            </div>
+
+            <!-- Menu Navigation Bar -->
+            <div class="flex items-center gap-2 border-b border-slate-200 dark:border-slate-700 pb-2 overflow-x-auto">
+              <button onclick="app.switchAdminTab('chat')" id="tab-admin-chat" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-brand-red text-white shadow">
+                <i class="fa-solid fa-robot mr-1"></i> Chatbot
+              </button>
+              <button onclick="app.switchAdminTab('horarios')" id="tab-admin-horarios" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-calendar-days mr-1"></i> Gestão de Horários
+              </button>
+              <button onclick="app.switchAdminTab('usuarios')" id="tab-admin-usuarios" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-users mr-1"></i> Cadastro de Usuários
+              </button>
+              <button onclick="app.switchAdminTab('turmas')" id="tab-admin-turmas" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-school mr-1"></i> Turmas & Grupos
+              </button>
+              <button onclick="app.switchAdminTab('disciplinas')" id="tab-admin-disciplinas" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-chalkboard mr-1"></i> Atribuição de Aulas
+              </button>
+              <button onclick="app.switchAdminTab('calendario')" id="tab-admin-calendario" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-calendar-check mr-1"></i> Calendário
+              </button>
+              <button onclick="app.switchAdminTab('kb')" id="tab-admin-kb" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-brain mr-1"></i> Base Chatbot
+              </button>
+              <button onclick="app.switchAdminTab('requerimentos')" id="tab-admin-requerimentos" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-file-signature mr-1"></i> Requerimentos
+              </button>
+              <button onclick="app.switchAdminTab('atestados')" id="tab-admin-atestados" class="px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200">
+                <i class="fa-solid fa-notes-medical mr-1"></i> Atestados
+              </button>
+            </div>
+
+            <!-- Tab Content -->
+            <div id="admin-tab-content">
+              ${this.renderChatbotComponent(false)}
+            </div>
+
+          </div>
+        `;
+      }
+
+      switchAdminTab(tabName) {
+        const buttons = document.querySelectorAll('[id^="tab-admin-"]');
+        buttons.forEach(b => {
+          b.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200';
+        });
+
+        const activeBtn = document.getElementById(`tab-admin-${tabName}`);
+        if (activeBtn) {
+          activeBtn.className = 'px-4 py-2 rounded-xl text-xs font-bold transition-all bg-brand-red text-white shadow';
+        }
+
+        const container = document.getElementById('admin-tab-content');
+        if (!container) return;
+
+        if (tabName === 'chat') {
+          container.innerHTML = this.renderChatbotComponent(false);
+        } else if (tabName === 'horarios') {
+          container.innerHTML = this.renderAdminHorarioManager();
+          this.renderAdminRascunhoGrid();
+        } else if (tabName === 'usuarios') {
+          container.innerHTML = this.renderAdminUserManagement();
+        } else if (tabName === 'turmas') {
+          container.innerHTML = this.renderAdminTurmasManager();
+        } else if (tabName === 'disciplinas') {
+          container.innerHTML = this.renderAdminDisciplinasManager();
+        } else if (tabName === 'calendario') {
+          container.innerHTML = this.renderAdminCalendarioManager();
+        } else if (tabName === 'kb') {
+          container.innerHTML = this.renderAdminKBManager();
+        } else if (tabName === 'requerimentos') {
+          container.innerHTML = this.renderAdminRequerimentosManager();
+        } else if (tabName === 'atestados') {
+          container.innerHTML = this.renderAdminAtestadosManager();
+        }
+      }
+
+      renderAdminHorarioManager() {
+        return `
+          <div class="space-y-6 animate-fadeIn">
+            
+            <!-- Schedule Configuration Header -->
+            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                    <i class="fa-solid fa-pen-ruler text-brand-red"></i> Montagem e Edição de Horário (Modo Rascunho)
+                  </h3>
+                  <p class="text-xs text-slate-500">Edite as aulas por turma. As alterações do rascunho só entram em vigor após a confirmação!</p>
+                </div>
+
+                <div class="flex items-center gap-2">
+                  <button onclick="app.confirmDraftSchedule()" class="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow transition-all flex items-center gap-2">
+                    <i class="fa-solid fa-check-double"></i> Confirmar e Publicar Horário Real
+                  </button>
+                  <button onclick="app.resetDraftSchedule()" class="px-3 py-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs hover:bg-slate-300">
+                    <i class="fa-solid fa-rotate-left"></i> Descartar Rascunho
+                  </button>
+                </div>
+              </div>
+
+              <!-- Selector for Turma Edition -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <div>
+                  <label class="block text-xs font-bold mb-1">Selecionar Turma para Edição *</label>
+                  <select id="admin-draft-turma" onchange="app.renderAdminRascunhoGrid()" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                    ${this.db.turmas.map(t => `<option value="${t.id}">${t.nome}</option>`).join('')}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Draft Grid Workspace -->
+            <div class="bg-white dark:bg-brand-cardDark rounded-3xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xl p-6 space-y-4">
+              <h4 class="font-bold text-sm flex items-center gap-2 text-slate-800 dark:text-slate-100">
+                <i class="fa-solid fa-table text-brand-red"></i> Grade de Rascunho da Turma Selecionada
+              </h4>
+
+              <div id="draft-conflict-warning" class="hidden p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 text-xs font-bold flex items-center gap-2">
+                <i class="fa-solid fa-triangle-exclamation text-lg"></i>
+                <span id="draft-conflict-msg">Conflito de horário detectado!</span>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-50 dark:bg-brand-darkerBg text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+                      <th class="p-3 border-r border-slate-200 dark:border-slate-700 w-28">Horário</th>
+                      ${this.db.horarioConfig.dias.map(d => `<th class="p-3 text-center border-r border-slate-200 dark:border-slate-700 min-w-[150px]">${d}</th>`).join('')}
+                    </tr>
+                  </thead>
+                  <tbody id="admin-draft-tbody">
+                    <!-- Injected by JS -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        `;
+      }
+
+      renderAdminRascunhoGrid() {
+        const tbody = document.getElementById('admin-draft-tbody');
+        if (!tbody) return;
+
+        const turmaId = document.getElementById('admin-draft-turma').value;
+        const slots = this.db.horarioConfig.slots;
+        const dias = this.db.horarioConfig.dias;
+        const disciplinasTurma = this.db.disciplinas.filter(d => d.turmaId === turmaId);
+
+        tbody.innerHTML = '';
+
+        // Conflict check across all turmas in draft mode
+        let conflictDetected = false;
+        let conflictDetails = '';
+
+        slots.forEach(slot => {
+          const tr = document.createElement('tr');
+          tr.className = 'border-b border-slate-200 dark:border-slate-700/60';
+
+          let timeCell = `<td class="p-3 font-mono font-bold bg-slate-50/80 dark:bg-brand-darkerBg/80 border-r border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">${slot.inicio} - ${slot.fim}</td>`;
+          let cellsHtml = '';
+
+          dias.forEach(dia => {
+            // Find assigned discipline in draft for this turma, day and slot
+            const currentEntry = this.db.horarioRascunho.find(h => h.turmaId === turmaId && h.dia === dia && h.slotId === slot.id);
+
+            // Select dropdown with available subjects
+            let optionsHtml = `<option value="">-- Horário Livre --</option>`;
+            disciplinasTurma.forEach(disc => {
+              const selected = currentEntry && currentEntry.discId === disc.id ? 'selected' : '';
+              optionsHtml += `<option value="${disc.id}" ${selected}>${disc.nome} (${disc.sigla})</option>`;
+            });
+
+            // Check if teacher has conflict in ANOTHER turma at this same day & slot
+            if (currentEntry) {
+              const assignedDisc = this.db.disciplinas.find(d => d.id === currentEntry.discId);
+              if (assignedDisc && assignedDisc.profLogin) {
+                // Check if this prof is assigned anywhere else at the exact same day & slot
+                const conflict = this.db.horarioRascunho.find(h => h.dia === dia && h.slotId === slot.id && h.turmaId !== turmaId && h.profLogin === assignedDisc.profLogin);
+                if (conflict) {
+                  conflictDetected = true;
+                  const prof = this.db.users.find(u => u.login === assignedDisc.profLogin);
+                  conflictDetails = `O professor ${prof ? prof.nome : assignedDisc.profLogin} possui choque de horário na ${dia} às ${slot.inicio}!`;
+                }
+              }
+            }
+
+            cellsHtml += `
+              <td class="p-2 border-r border-slate-200 dark:border-slate-700">
+                <select onchange="app.updateDraftSlot('${turmaId}', '${dia}', ${slot.id}, this.value)" class="w-full p-2 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs font-medium focus:ring-2 focus:ring-brand-red">
+                  ${optionsHtml}
+                </select>
+              </td>
+            `;
+          });
+
+          tr.innerHTML = timeCell + cellsHtml;
+          tbody.appendChild(tr);
+        });
+
+        // Toggle Conflict Warning Banner
+        const warnBox = document.getElementById('draft-conflict-warning');
+        const warnMsg = document.getElementById('draft-conflict-msg');
+        if (warnBox && warnMsg) {
+          if (conflictDetected) {
+            warnBox.classList.remove('hidden');
+            warnMsg.innerText = conflictDetails;
+          } else {
+            warnBox.classList.add('hidden');
+          }
+        }
+      }
+
+      updateDraftSlot(turmaId, dia, slotId, discId) {
+        // Remove existing entry for this slot
+        const idx = this.db.horarioRascunho.findIndex(h => h.turmaId === turmaId && h.dia === dia && h.slotId === slotId);
+        if (idx !== -1) {
+          this.db.horarioRascunho.splice(idx, 1);
+        }
+
+        if (discId) {
+          const disc = this.db.disciplinas.find(d => d.id === discId);
+          this.db.horarioRascunho.push({
+            turmaId: turmaId,
+            dia: dia,
+            slotId: slotId,
+            discId: discId,
+            profLogin: disc ? disc.profLogin : ''
+          });
+        }
+
+        this.saveDB();
+        this.renderAdminRascunhoGrid();
+      }
+
+      confirmDraftSchedule() {
+        this.db.horarioReal = JSON.parse(JSON.stringify(this.db.horarioRascunho));
+        this.saveDB();
+        this.toast('Horário Rascunho publicado com sucesso para todo o sistema!', 'success');
+      }
+
+      resetDraftSchedule() {
+        this.db.horarioRascunho = JSON.parse(JSON.stringify(this.db.horarioReal));
+        this.saveDB();
+        this.renderAdminRascunhoGrid();
+        this.toast('Rascunho restaurado para o estado atual do horário real.', 'info');
+      }
+
+      renderAdminUserManagement() {
+        const users = this.db.users;
+
+        return `
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+            
+            <!-- Create User Form -->
+            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <div>
+                <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                  <i class="fa-solid fa-user-plus text-brand-red"></i> Cadastrar Novo Usuário
+                </h3>
+                <p class="text-xs text-slate-500">O sistema gera um ID de registro único automaticamente</p>
+              </div>
+
+              <form onsubmit="app.handleCreateUserSubmit(event)" class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold mb-1">Perfil do Usuário *</label>
+                  <select id="usr-role" onchange="app.toggleUserFormFields()" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                    <option value="aluno">Aluno (+ Responsáveis 1 e 2)</option>
+                    <option value="professor">Professor</option>
+                    <option value="administrador">Administrador</option>
+                    <option value="assistente">Assistente</option>
+                  </select>
+                </div>
+
+                <div id="usr-fields-container" class="space-y-3">
+                  <!-- Injected fields -->
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 bg-brand-red hover:bg-brand-redHover text-white font-bold rounded-xl text-xs shadow-lg transition-all flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-check"></i> Finalizar Cadastro
+                </button>
+              </form>
+            </div>
+
+            <!-- Existing Users List -->
+            <div class="lg:col-span-2 bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-users-gear text-brand-red"></i> Usuários Cadastrados no Sistema
+              </h3>
+
+              <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr class="bg-slate-50 dark:bg-brand-darkerBg text-slate-600 dark:text-slate-300 border-b border-slate-200 dark:border-slate-700">
+                      <th class="p-3">ID Único (Admin)</th>
+                      <th class="p-3">Nome / Usuário</th>
+                      <th class="p-3">Perfil</th>
+                      <th class="p-3">RM / Login</th>
+                      <th class="p-3 text-right">Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${users.map(u => `
+                      <tr class="border-b border-slate-200 dark:border-slate-700/60 hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                        <td class="p-3 font-mono font-bold text-brand-red">${u.id}</td>
+                        <td class="p-3 font-bold">${u.nome}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded-full font-bold text-[10px] bg-slate-200 dark:bg-slate-700 uppercase">${u.role}</span></td>
+                        <td class="p-3 font-mono text-slate-500">${u.rm || u.login}</td>
+                        <td class="p-3 text-right space-x-1">
+                          <button onclick="app.deleteUser('${u.id}')" class="p-1.5 rounded-lg bg-red-500/10 text-red-600 hover:bg-red-500 hover:text-white transition-all"><i class="fa-solid fa-trash-can"></i></button>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+          </div>
+        `;
+      }
+
+      toggleUserFormFields() {
+        const role = document.getElementById('usr-role').value;
+        const container = document.getElementById('usr-fields-container');
+
+        if (role === 'aluno') {
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-bold mb-1">Registro de Matrícula (RM) *</label>
+              <input type="text" id="usr-rm" required placeholder="Ex: 2026002" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome Completo do Aluno *</label>
+              <input type="text" id="usr-nome-aluno" required placeholder="Ex: Mariana Silva" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">CPF do Aluno *</label>
+              <input type="text" id="usr-cpf-aluno" required placeholder="Ex: 777.888.999-00" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Atribuir à Turma *</label>
+              <select id="usr-turma" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                ${this.db.turmas.map(t => `<option value="${t.id}">${t.nome}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome do Responsável 1 *</label>
+              <input type="text" id="usr-resp1" required placeholder="Ex: Fernando Silva" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome do Responsável 2</label>
+              <input type="text" id="usr-resp2" placeholder="Ex: Patrícia Silva" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+          `;
+        } else if (role === 'professor') {
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome Completo do Professor *</label>
+              <input type="text" id="usr-nome-prof" required placeholder="Ex: Carlos Eduardo" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">CPF do Professor *</label>
+              <input type="text" id="usr-cpf-prof" required placeholder="Ex: 888.999.000-11" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome de Usuário (joao.silva) *</label>
+              <input type="text" id="usr-login-prof" required placeholder="Ex: carlos.eduardo" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+          `;
+        } else {
+          // Admin or Assistant
+          container.innerHTML = `
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome Completo *</label>
+              <input type="text" id="usr-nome-admin" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">CPF *</label>
+              <input type="text" id="usr-cpf-admin" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Nome de Usuário para Login *</label>
+              <input type="text" id="usr-login-admin" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+            <div>
+              <label class="block text-xs font-bold mb-1">Senha de Acesso Inicial *</label>
+              <input type="password" id="usr-pass-admin" required placeholder="Min 8 dig, 1 num, 1 letra, 1 esp" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+            </div>
+          `;
+        }
+      }
+
+      handleCreateUserSubmit(e) {
+        e.preventDefault();
+        const role = document.getElementById('usr-role').value;
+        const systemId = 'SYS-' + Math.floor(Math.random() * 9000 + 1000);
+
+        if (role === 'aluno') {
+          const rm = document.getElementById('usr-rm').value.trim();
+          const nomeAluno = document.getElementById('usr-nome-aluno').value.trim();
+          const cpfAluno = document.getElementById('usr-cpf-aluno').value.trim();
+          const turmaId = document.getElementById('usr-turma').value;
+          const resp1 = document.getElementById('usr-resp1').value.trim();
+          const resp2 = document.getElementById('usr-resp2').value.trim();
+
+          const turmaObj = this.db.turmas.find(t => t.id === turmaId);
+
+          // Create Student
+          const studentUser = {
+            id: systemId,
+            role: 'aluno',
+            rm: rm,
+            nome: nomeAluno,
+            cpf: cpfAluno,
+            turmaId: turmaId,
+            nomeTurma: turmaObj ? turmaObj.nome : '',
+            resp1Nome: resp1,
+            resp2Nome: resp2,
+            senhaHash: 'Aluno123!' // default initial
+          };
+
+          // Auto-create Parent User
+          const parentUser = {
+            id: 'SYS-' + Math.floor(Math.random() * 9000 + 1000),
+            role: 'responsavel',
+            rm: rm,
+            nome: resp1,
+            alunoNome: nomeAluno,
+            cpf: cpfAluno,
+            turmaId: turmaId,
+            nomeTurma: turmaObj ? turmaObj.nome : '',
+            senhaHash: 'Resp123!'
+          };
+
+          this.db.users.push(studentUser, parentUser);
+        } else if (role === 'professor') {
+          const nomeProf = document.getElementById('usr-nome-prof').value.trim();
+          const cpfProf = document.getElementById('usr-cpf-prof').value.trim();
+          const loginProf = document.getElementById('usr-login-prof').value.trim();
+
+          const profUser = {
+            id: systemId,
+            role: 'professor',
+            login: loginProf,
+            nome: nomeProf,
+            cpf: cpfProf,
+            senhaHash: 'Prof123!'
+          };
+
+          this.db.users.push(profUser);
+        } else {
+          // Admin / Assistant
+          const nome = document.getElementById('usr-nome-admin').value.trim();
+          const cpf = document.getElementById('usr-cpf-admin').value.trim();
+          const login = document.getElementById('usr-login-admin').value.trim();
+          const pass = document.getElementById('usr-pass-admin').value;
+
+          const adminUser = {
+            id: systemId,
+            role: role,
+            login: login,
+            nome: nome,
+            cpf: cpf,
+            senhaHash: pass,
+            permissoes: role === 'assistente' ? ['requerimentos', 'atestados'] : ['all']
+          };
+
+          this.db.users.push(adminUser);
+        }
+
+        this.saveDB();
+        this.toast('Usuário(s) cadastrado(s) com sucesso!', 'success');
+        this.switchAdminTab('usuarios');
+      }
+
+      deleteUser(userId) {
+        if (userId === 'SYS-1001') {
+          this.toast('Não é possível excluir o Administrador principal.', 'error');
+          return;
+        }
+        const idx = this.db.users.findIndex(u => u.id === userId);
+        if (idx !== -1) {
+          this.db.users.splice(idx, 1);
+          this.saveDB();
+          this.toast('Usuário removido com sucesso.', 'info');
+          this.switchAdminTab('usuarios');
+        }
+      }
+
+      renderAdminTurmasManager() {
+        return `
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+            <!-- Create Turma Form -->
+            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-school text-brand-red"></i> Criar Nova Turma
+              </h3>
+
+              <form onsubmit="app.handleCreateTurmaSubmit(event)" class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold mb-1">Nome da Turma / Curso *</label>
+                  <input type="text" id="turma-nome" required placeholder="Ex: 1º Ano C - Ensino Médio" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Período *</label>
+                  <select id="turma-periodo" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                    <option value="Matutino">Matutino</option>
+                    <option value="Vespertino">Vespertino</option>
+                    <option value="Noturno">Noturno</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Divisão de Subgrupos (Separado por vírgula)</label>
+                  <input type="text" id="turma-grupos" placeholder="Ex: Grupo A, Grupo B" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 bg-brand-red hover:bg-brand-redHover text-white font-bold rounded-xl text-xs shadow-lg transition-all">
+                  Cadastrar Turma
+                </button>
+              </form>
+            </div>
+
+            <!-- List of Turmas -->
+            <div class="lg:col-span-2 bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-list text-brand-red"></i> Turmas Cadastradas
+              </h3>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                ${this.db.turmas.map(t => `
+                  <div class="p-4 rounded-2xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
+                    <div class="flex justify-between items-start">
+                      <h4 class="font-bold text-sm text-slate-800 dark:text-slate-100">${t.nome}</h4>
+                      <span class="px-2 py-0.5 rounded-full bg-slate-200 dark:bg-slate-700 text-[10px] font-bold">${t.periodo}</span>
+                    </div>
+                    <p class="text-slate-500"><strong>Subgrupos:</strong> ${t.grupos ? t.grupos.join(', ') : 'Nenhum'}</p>
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-700 flex justify-end">
+                      <button onclick="app.deleteTurma('${t.id}')" class="text-red-500 font-bold hover:underline">Excluir Turma</button>
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      handleCreateTurmaSubmit(e) {
+        e.preventDefault();
+        const nome = document.getElementById('turma-nome').value.trim();
+        const periodo = document.getElementById('turma-periodo').value;
+        const gruposRaw = document.getElementById('turma-grupos').value.trim();
+
+        const grupos = gruposRaw ? gruposRaw.split(',').map(g => g.trim()) : ['Grupo Único'];
+
+        const newTurma = {
+          id: 'TURMA-' + Math.floor(Math.random() * 9000 + 1000),
+          nome: nome,
+          periodo: periodo,
+          grupos: grupos
+        };
+
+        this.db.turmas.push(newTurma);
+        this.saveDB();
+        this.toast('Turma cadastrada com sucesso!', 'success');
+        this.switchAdminTab('turmas');
+      }
+
+      deleteTurma(turmaId) {
+        const idx = this.db.turmas.findIndex(t => t.id === turmaId);
+        if (idx !== -1) {
+          this.db.turmas.splice(idx, 1);
+          this.saveDB();
+          this.toast('Turma removida.', 'info');
+          this.switchAdminTab('turmas');
+        }
+      }
+
+      renderAdminDisciplinasManager() {
+        const profs = this.db.users.filter(u => u.role === 'professor');
+
+        return `
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+            <!-- Create Discipline Form -->
+            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-chalkboard text-brand-red"></i> Cadastrar Disciplina
+              </h3>
+
+              <form onsubmit="app.handleCreateDisciplinaSubmit(event)" class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold mb-1">Escolha a Turma *</label>
+                  <select id="disc-turma" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                    ${this.db.turmas.map(t => `<option value="${t.id}">${t.nome}</option>`).join('')}
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Nome da Disciplina *</label>
+                  <input type="text" id="disc-nome" required placeholder="Ex: Biologia Avançada" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Sigla *</label>
+                  <input type="text" id="disc-sigla" required placeholder="Ex: BIO" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Aulas Semanais *</label>
+                  <input type="number" id="disc-aulas" min="1" max="20" value="4" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Atribuir Professor Responsável *</label>
+                  <select id="disc-prof" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                    ${profs.map(p => `<option value="${p.login}">${p.nome}</option>`).join('')}
+                  </select>
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 bg-brand-red hover:bg-brand-redHover text-white font-bold rounded-xl text-xs shadow-lg transition-all">
+                  Cadastrar Disciplina
+                </button>
+              </form>
+            </div>
+
+            <!-- List of Disciplines -->
+            <div class="lg:col-span-2 bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-book text-brand-red"></i> Disciplinas Atribuídas por Turma
+              </h3>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                ${this.db.disciplinas.map(d => {
+                  const turma = this.db.turmas.find(t => t.id === d.turmaId);
+                  const prof = this.db.users.find(u => u.login === d.profLogin);
+
+                  return `
+                    <div class="p-4 rounded-2xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 space-y-2 text-xs">
+                      <div class="flex justify-between items-start">
+                        <h4 class="font-bold text-sm text-slate-800 dark:text-slate-100">${d.nome} (${d.sigla})</h4>
+                        <span class="px-2 py-0.5 rounded bg-brand-red/10 text-brand-red font-bold text-[10px]">${d.aulasSemanais}h/sem</span>
+                      </div>
+                      <p class="text-slate-500"><strong>Turma:</strong> ${turma ? turma.nome : 'N/A'}</p>
+                      <p class="text-slate-500"><strong>Professor:</strong> ${prof ? prof.nome : d.profLogin}</p>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      handleCreateDisciplinaSubmit(e) {
+        e.preventDefault();
+        const turmaId = document.getElementById('disc-turma').value;
+        const nome = document.getElementById('disc-nome').value.trim();
+        const sigla = document.getElementById('disc-sigla').value.trim().toUpperCase();
+        const aulas = parseInt(document.getElementById('disc-aulas').value);
+        const profLogin = document.getElementById('disc-prof').value;
+
+        const newDisc = {
+          id: 'DISC-' + Math.floor(Math.random() * 9000 + 1000),
+          turmaId: turmaId,
+          nome: nome,
+          sigla: sigla,
+          aulasSemanais: aulas,
+          profLogin: profLogin
+        };
+
+        this.db.disciplinas.push(newDisc);
+        this.saveDB();
+        this.toast('Disciplina atribuída com sucesso!', 'success');
+        this.switchAdminTab('disciplinas');
+      }
+
+      renderAdminCalendarioManager() {
+        return `
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+            <!-- Create Event Form -->
+            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-calendar-plus text-brand-red"></i> Novo Evento no Calendário
+              </h3>
+
+              <form onsubmit="app.handleCreateEventSubmit(event)" class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold mb-1">Título do Evento *</label>
+                  <input type="text" id="ev-titulo" required placeholder="Ex: Entrega de Notas 1º Bimestre" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Data *</label>
+                  <input type="date" id="ev-data" required class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Tipo de Evento *</label>
+                  <select id="ev-tipo" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                    <option value="Letivo">Dia Letivo Especial</option>
+                    <option value="Atividade">Atividade / Feira</option>
+                    <option value="Prazo">Prazo de Notas</option>
+                    <option value="Conselho">Conselho Escolar</option>
+                    <option value="Viagem">Viagem / Excursão</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Descrição</label>
+                  <textarea id="ev-desc" rows="2" placeholder="Informações gerais..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs"></textarea>
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 bg-brand-red hover:bg-brand-redHover text-white font-bold rounded-xl text-xs shadow-lg transition-all">
+                  Publicar no Calendário
+                </button>
+              </form>
+            </div>
+
+            <div class="lg:col-span-2">
+              ${this.renderCalendarioComponent()}
+            </div>
+          </div>
+        `;
+      }
+
+      handleCreateEventSubmit(e) {
+        e.preventDefault();
+        const titulo = document.getElementById('ev-titulo').value.trim();
+        const data = document.getElementById('ev-data').value;
+        const tipo = document.getElementById('ev-tipo').value;
+        const desc = document.getElementById('ev-desc').value.trim();
+
+        const newEv = {
+          id: 'CAL-' + Math.floor(Math.random() * 9000 + 1000),
+          titulo: titulo,
+          data: data,
+          tipo: tipo,
+          desc: desc
+        };
+
+        this.db.calendario.push(newEv);
+        this.saveDB();
+        this.toast('Evento adicionado ao calendário escolar!', 'success');
+        this.switchAdminTab('calendario');
+      }
+
+      renderAdminKBManager() {
+        return `
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
+            <!-- Create KB Item Form -->
+            <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-brain text-brand-red"></i> Cadastrar Resposta da IA
+              </h3>
+              <p class="text-xs text-slate-500">Adicione tutoriais, regras e manuais para o chatbot responder</p>
+
+              <form onsubmit="app.handleCreateKBSubmit(event)" class="space-y-3">
+                <div>
+                  <label class="block text-xs font-bold mb-1">Palavras-Chave (Separadas por espaço) *</label>
+                  <input type="text" id="kb-keywords" required placeholder="Ex: prova recuperacao nota minima" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Pergunta / Tópico do Aluno *</label>
+                  <input type="text" id="kb-pergunta" required placeholder="Ex: Qual a nota mínima de recuperação?" class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold mb-1">Resposta do Chatbot *</label>
+                  <textarea id="kb-resposta" required rows="4" placeholder="Escreva a instrução ou manual..." class="w-full p-2.5 rounded-xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700 text-xs"></textarea>
+                </div>
+
+                <button type="submit" class="w-full py-3 px-4 bg-brand-red hover:bg-brand-redHover text-white font-bold rounded-xl text-xs shadow-lg transition-all">
+                  Salvar na Base do Chatbot
+                </button>
+              </form>
+            </div>
+
+            <!-- Existing KB Items -->
+            <div class="lg:col-span-2 bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4">
+              <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-database text-brand-red"></i> Conhecimento Ativo do Chatbot
+              </h3>
+
+              <div class="space-y-3">
+                ${this.db.knowledgeBase.map(kb => `
+                  <div class="p-4 rounded-2xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700/80 space-y-2 text-xs">
+                    <div class="flex justify-between items-center">
+                      <h4 class="font-bold text-slate-800 dark:text-slate-100 text-sm">${kb.pergunta}</h4>
+                      <button onclick="app.deleteKB('${kb.id}')" class="text-red-500 font-bold hover:underline">Excluir</button>
+                    </div>
+                    <p class="text-slate-600 dark:text-slate-300">${kb.resposta}</p>
+                    <div class="pt-2 border-t border-slate-200 dark:border-slate-700 text-[10px] text-slate-400">
+                      <strong>Palavras-chave:</strong> ${kb.palavrasChave}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      handleCreateKBSubmit(e) {
+        e.preventDefault();
+        const keywords = document.getElementById('kb-keywords').value.trim();
+        const pergunta = document.getElementById('kb-pergunta').value.trim();
+        const resposta = document.getElementById('kb-resposta').value.trim();
+
+        const newKB = {
+          id: 'KB-' + Math.floor(Math.random() * 9000 + 1000),
+          palavrasChave: keywords,
+          pergunta: pergunta,
+          resposta: resposta
+        };
+
+        this.db.knowledgeBase.push(newKB);
+        this.saveDB();
+        this.toast('Conhecimento registrado na IA!', 'success');
+        this.switchAdminTab('kb');
+      }
+
+      deleteKB(kbId) {
+        const idx = this.db.knowledgeBase.findIndex(k => k.id === kbId);
+        if (idx !== -1) {
+          this.db.knowledgeBase.splice(idx, 1);
+          this.saveDB();
+          this.toast('Tópico removido.', 'info');
+          this.switchAdminTab('kb');
+        }
+      }
+
+      renderAdminRequerimentosManager() {
+        const reqs = this.db.requerimentos;
+
+        const statuses = [
+          'Pendente',
+          'Em Análise',
+          'Aguardando Assinatura',
+          'Pronto para retirada',
+          'Entregue',
+          'Recusado'
+        ];
+
+        return `
+          <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4 animate-fadeIn">
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-file-signature text-brand-red"></i> Gerenciamento Geral de Requerimentos
+            </h3>
+
+            <div class="space-y-4">
+              ${reqs.map(req => `
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700/80 space-y-3 text-xs">
+                  <div class="flex flex-wrap justify-between items-center gap-2">
+                    <div>
+                      <span class="font-bold text-sm text-slate-800 dark:text-slate-100">${req.tipo}</span>
+                      <span class="text-[10px] text-slate-400 block">Aluno: <strong>${req.nomeAluno}</strong> (RM: ${req.rmAluno}) • ${req.dataCriacao}</span>
+                    </div>
+                    <span class="badge-status bg-slate-200 dark:bg-slate-700">${req.status}</span>
+                  </div>
+
+                  <p class="text-slate-600 dark:text-slate-300"><strong>Motivo:</strong> ${req.motivo}</p>
+
+                  <div class="pt-3 border-t border-slate-200 dark:border-slate-700 flex flex-wrap items-center gap-3">
+                    <label class="font-bold text-xs">Atualizar Status:</label>
+                    <select onchange="app.updateReqStatus('${req.id}', this.value)" class="p-2 rounded-xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                      ${statuses.map(s => `<option value="${s}" ${req.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+                    </select>
+
+                    ${req.status === 'Recusado' ? `
+                      <input type="text" value="${req.motivoRecusa || ''}" placeholder="Informe o motivo da recusa..." onchange="app.updateReqMotivoRecusa('${req.id}', this.value)" class="flex-1 p-2 rounded-xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-700 text-xs">
+                    ` : ''}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      updateReqStatus(reqId, newStatus) {
+        const req = this.db.requerimentos.find(r => r.id === reqId);
+        if (req) {
+          req.status = newStatus;
+          this.saveDB();
+          this.toast(`Status do requerimento ${reqId} alterado para: ${newStatus}`, 'success');
+          this.switchAdminTab('requerimentos');
+        }
+      }
+
+      updateReqMotivoRecusa(reqId, motivo) {
+        const req = this.db.requerimentos.find(r => r.id === reqId);
+        if (req) {
+          req.motivoRecusa = motivo;
+          this.saveDB();
+          this.toast('Motivo da recusa registrado.', 'info');
+        }
+      }
+
+      renderAdminAtestadosManager() {
+        const atestados = this.db.atestados;
+
+        const statuses = [
+          'Pendente',
+          'Recebido em Análise',
+          'Aceito',
+          'Recusado'
+        ];
+
+        return `
+          <div class="bg-white dark:bg-brand-cardDark p-6 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-xl space-y-4 animate-fadeIn">
+            <h3 class="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+              <i class="fa-solid fa-notes-medical text-brand-red"></i> Gerenciamento de Atestados Médicos
+            </h3>
+
+            <div class="space-y-4">
+              ${atestados.map(a => `
+                <div class="p-4 rounded-2xl bg-slate-50 dark:bg-brand-darkerBg border border-slate-200 dark:border-slate-700/80 space-y-3 text-xs">
+                  <div class="flex flex-wrap justify-between items-center gap-2">
+                    <div>
+                      <span class="font-bold text-sm text-slate-800 dark:text-slate-100">Atestado (${a.dias} dias) - Data: ${a.dataAtestado}</span>
+                      <span class="text-[10px] text-slate-400 block">Aluno: <strong>${a.nomeAluno}</strong> (RM: ${a.rmAluno}) • ${a.curso}</span>
+                    </div>
+                    <span class="badge-status bg-slate-200 dark:bg-slate-700">${a.status}</span>
+                  </div>
+
+                  <p class="text-slate-500"><strong>Arquivo Anexo:</strong> <code class="bg-slate-200 dark:bg-slate-800 px-1.5 py-0.5 rounded font-mono">${a.comprovanteNome || 'atestado.pdf'}</code></p>
+
+                  <div class="pt-3 border-t border-slate-200 dark:border-slate-700 flex flex-wrap items-center gap-3">
+                    <label class="font-bold text-xs">Atualizar Status:</label>
+                    <select onchange="app.updateAtestadoStatus('${a.id}', this.value)" class="p-2 rounded-xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-700 text-xs font-bold">
+                      ${statuses.map(s => `<option value="${s}" ${a.status === s ? 'selected' : ''}>${s}</option>`).join('')}
+                    </select>
+
+                    ${a.status === 'Recusado' ? `
+                      <input type="text" value="${a.motivoRecusa || ''}" placeholder="Motivo da recusa do atestado..." onchange="app.updateAtestadoMotivoRecusa('${a.id}', this.value)" class="flex-1 p-2 rounded-xl bg-white dark:bg-brand-cardDark border border-slate-200 dark:border-slate-700 text-xs">
+                    ` : ''}
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
+      updateAtestadoStatus(ateId, newStatus) {
+        const ate = this.db.atestados.find(a => a.id === ateId);
+        if (ate) {
+          ate.status = newStatus;
+          this.saveDB();
+          this.toast(`Status do atestado alterado para: ${newStatus}`, 'success');
+          this.switchAdminTab('atestados');
+        }
+      }
+
+      updateAtestadoMotivoRecusa(ateId, motivo) {
+        const ate = this.db.atestados.find(a => a.id === ateId);
+        if (ate) {
+          ate.motivoRecusa = motivo;
+          this.saveDB();
+          this.toast('Motivo salvo.', 'info');
+        }
+      }
+
+
+      /* ===================================================================
+         TELA 6: TELA DE VISITANTE
+         =================================================================== */
+      renderVisitanteView() {
+        const viewport = document.getElementById('app-viewport');
+
+        viewport.innerHTML = `
+          <div class="space-y-6 animate-fadeIn">
+            <!-- Visitor Welcome Banner -->
+            <div class="bg-white dark:bg-brand-cardDark rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div class="flex items-center gap-4">
+                <div class="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-500 font-black text-2xl">
+                  <i class="fa-solid fa-eye"></i>
+                </div>
+                <div>
+                  <h1 class="text-xl font-black text-slate-900 dark:text-white">Área de Acesso Institucional (Visitante)</h1>
+                  <p class="text-xs text-slate-500">Acesse orientações públicas e consulte o calendário acadêmico da instituição</p>
+                </div>
+              </div>
+
+              <button onclick="app.logout()" class="px-4 py-2.5 rounded-xl bg-brand-red text-white font-bold text-xs shadow hover:bg-brand-redHover transition-all flex items-center gap-2">
+                <i class="fa-solid fa-right-to-bracket"></i> Fazer Login
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <!-- Limited Chatbot -->
+              <div>
+                ${this.renderChatbotComponent(true)}
+              </div>
+
+              <!-- Visitor Calendar -->
+              <div>
+                ${this.renderCalendarioComponent()}
+              </div>
+            </div>
+          </div>
+        `;
+      }
+    }
+
+    let app;
+    window.addEventListener('DOMContentLoaded', () => {
+      app = new SAVEApp();
+    });
+  </script>
+</body>
+</html>
